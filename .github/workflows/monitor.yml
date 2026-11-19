@@ -24,7 +24,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Monitor
         env:
-          SLACK_WEBHOOK_URL: PLACEHOLDER_SECRET
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python -m torwatch.cli --run
       - name: Commit history
         run: |

@@ -1,0 +1,9 @@
+assets:
+  domains:
+    - example.com
+  emails:
+    - security@example.com
+  names:
+    - Example Corporation
+  services:
+    - Example Service

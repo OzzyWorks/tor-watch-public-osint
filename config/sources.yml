@@ -1,0 +1,25 @@
+sources:
+  - id: jpcert
+    name: JPCERT/CC 注意喚起・緊急報告
+    url: https://www.jpcert.or.jp/rss/jpcert.rdf
+    enabled: true
+  - id: ipa
+    name: IPA 重要なセキュリティ情報
+    url: https://www.ipa.go.jp/security/alert-rss.rdf
+    enabled: true
+  - id: jvn
+    name: JVN 脆弱性情報
+    url: https://jvn.jp/rss/jvn.rdf
+    enabled: true
+  - id: security_next
+    name: Security NEXT
+    url: https://www.security-next.com/feed
+    enabled: true
+  - id: bleepingcomputer
+    name: BleepingComputer
+    url: https://www.bleepingcomputer.com/feed/
+    enabled: true
+  - id: the_record
+    name: The Record
+    url: https://therecord.media/feed
+    enabled: true

@@ -37,7 +37,7 @@ def _alert_message(url,title,state,risk,reasons):
     level=_level(risk)
     companies=[r.split(":",1)[1] for r in reasons if r.startswith("company:")]
     company_text="、".join(dict.fromkeys(companies)) if companies else "監視対象企業との一致なし"
-    event_text={"new":"新規ページ検出","changed":"ページ内容の更新","unchanged":"リスク判定の変化"}.get(state,state)
+    event_text={"new":"新規ページ検出","changed":"ページ内容の更新","unchanged":"継続中の高リスク検知（初回通知）"}.get(state,state)
     lines=[
         f"🛡️ *Tor Watch / {level} ({risk}/100)*",
         f"*対象企業:* {company_text}",
@@ -104,15 +104,23 @@ def run(demo=False, test_slack=False):
             should_notify=(
                 (old is None and risk>=50) or
                 (state=="changed" and risk>=70) or
-                (old is not None and old_risk<70 and risk>=70)
+                (old is not None and old_risk<70 and risk>=70) or
+                # Backfill pre-existing high-risk dashboard findings once.
+                (old is not None and state=="unchanged" and risk>=70)
             )
             if state in ("new","changed") or risk>=50:
                 add_event(url,title,state,risk,reasons,diff)
             if should_notify and not demo:
+                # Dedupe by page content + risk band, independent of event state.
+                # This sends pre-existing HIGH/CRITICAL findings once after deployment.
                 event_key=hashlib.sha256(
-                    f"{url}|{sha}|{level}|{state}".encode("utf-8")
+                    f"{url}|{sha}|{level}".encode("utf-8")
                 ).hexdigest()
-                enqueue_notification(event_key,_alert_message(url,title,state,risk,reasons))
+                queued=enqueue_notification(event_key,_alert_message(url,title,state,risk,reasons))
+                if queued:
+                    print(f"Slack: queued {level} alert for {url}")
+                else:
+                    print(f"Slack: duplicate suppressed for {url} ({level})")
 
             save(url,title,sha,text,risk,reasons)
             results.append({

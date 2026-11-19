@@ -12,7 +12,7 @@ import yaml
 from bs4 import BeautifulSoup
 
 from .config import CONFIG, load_assets
-from .storage import add_threat_item, list_threat_items
+from .storage import add_threat_item, list_threat_items, enqueue_notification
 from .notifier import notify
 
 UA = "TorWatch-Public-OSINT/0.4 (+public defensive monitoring)"
@@ -143,10 +143,8 @@ def run_public_monitor():
                             f"*検出語:* {', '.join(x.split(':',1)[1] for x in reasons if x.startswith('incident_term:'))}\n"
                             f"*確認状況:* {item['status']}\n{url}"
                         )
-                        try:
-                            notify(message)\n                            print("Slack RSS alert delivered:", item["title"][:120])
-                        except Exception as notify_error:
-                            print("Slack RSS notification failed:",str(notify_error)[:250])
+                        if enqueue_notification(item_id,message):
+                            print("Slack RSS alert queued:", item["title"][:120])
             results.append({"source":source.get("name","?"),"items":len(entries),"new_alerts":new_count})
         except Exception as exc:
             results.append({"source":source.get("name","?"),"error":str(exc)[:300]})

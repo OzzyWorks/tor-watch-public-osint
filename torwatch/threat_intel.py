@@ -144,9 +144,9 @@ def run_public_monitor():
                             f"*確認状況:* {item['status']}\n{url}"
                         )
                         try:
-                            notify(message)
+                            notify(message)\n                            print("Slack RSS alert delivered:", item["title"][:120])
                         except Exception as notify_error:
-                            print("Slack notification failed:",str(notify_error)[:200])
+                            print("Slack RSS notification failed:",str(notify_error)[:250])
             results.append({"source":source.get("name","?"),"items":len(entries),"new_alerts":new_count})
         except Exception as exc:
             results.append({"source":source.get("name","?"),"error":str(exc)[:300]})

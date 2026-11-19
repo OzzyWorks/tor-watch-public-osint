@@ -25,6 +25,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Monitor
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python -m torwatch.cli --run
       - name: Export web data
         run: python scripts/export_web.py

@@ -1,9 +1,47 @@
 assets:
   domains:
-    - example.com
-  emails:
-    - security@example.com
+    - toyota.com
+    - sony.com
+    - ntt.com
+    - hitachi.com
+    - mufg.jp
+    - mitsubishicorp.com
+    - itochu.co.jp
+    - sekisuihouse.co.jp
+    - dts.co.jp
+    - inpex.co.jp
+    - nipponsteel.com
+    - tokiomarinehd.com
+    - mhi.com
+    - nttdata.com
+    - mitsubishi-hc-capital.com
+    - rakuten-sec.co.jp
+    - sbisec.co.jp
+    - mizuho-sc.com
+
+  emails: []
+
   names:
-    - Example Corporation
-  services:
-    - Example Service
+    - Toyota Motor Corporation
+    - Sony Group Corporation
+    - NTT Corporation
+    - Hitachi, Ltd.
+    - Mitsubishi UFJ Financial Group
+    - Mitsubishi Corporation
+    - ITOCHU Corporation
+    - Sekisui House
+    - DTS Corporation
+    - INPEX Corporation
+    - Nippon Steel Corporation
+    - Tokio Marine Holdings
+    - Mitsubishi Heavy Industries
+    - NTT DATA Group
+    - Mitsubishi HC Capital
+    - 楽天証券株式会社
+    - Rakuten Securities, Inc.
+    - 株式会社SBI証券
+    - SBI SECURITIES Co., Ltd.
+    - みずほ証券株式会社
+    - Mizuho Securities Co., Ltd.
+
+  services: []

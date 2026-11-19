@@ -35,3 +35,17 @@ GitHub ActionsではリポジトリSecret `SLACK_WEBHOOK_URL` を設定すると
 
 ## Web dashboard
 The `web/` directory is a static dashboard designed for GitHub Pages. GitHub Actions runs the monitor, exports `data/history.db` to `web/data.json`, and publishes the dashboard. Enable GitHub Pages with the Actions deployment workflow as the source.
+
+
+## Public company threat-intelligence monitoring
+
+In addition to the explicitly registered Tor pages, the monitor checks configured public HTTPS RSS/Atom feeds in `config/sources.yml`.
+It matches article titles and summaries against the names/domains in `config/assets.yml`, then requires incident-related language before storing an alert.
+
+- Public RSS/Atom metadata only; it does not download linked leak files or access restricted systems.
+- New matching alerts are stored in SQLite (`data/history.db`) and exported to the GitHub Pages dashboard.
+- Slack notifications use the `SLACK_WEBHOOK_URL` repository secret.
+- Alert status is explicitly marked as public reporting / not independently confirmed by the affected company.
+- Feed errors are isolated per source. Only HTTPS feed URLs are accepted.
+
+Run locally with `python -m torwatch.cli --run` after installing dependencies. Run tests with `python -m unittest discover -s tests`.

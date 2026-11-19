@@ -1,0 +1,14 @@
+password
+credential
+credentials
+database
+dump
+leak
+ransomware
+stealer
+customer
+employee
+personal data
+credit card
+api key
+secret

@@ -1,5 +1,6 @@
 import unittest
-from torwatch.threat_intel import _matches, _parse_feed, _risk\nfrom torwatch.risk import score
+from torwatch.threat_intel import _matches, _parse_feed, _risk
+from torwatch.risk import score
 
 class ThreatIntelTests(unittest.TestCase):
     def test_company_name_match_japanese_and_english(self):

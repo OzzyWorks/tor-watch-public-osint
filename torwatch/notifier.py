@@ -1,4 +1,4 @@
-"""Slack incoming-webhook delivery."""
+"""Slack incoming-webhook delivery with explicit success/failure feedback."""
 import os
 import requests
 
@@ -12,4 +12,5 @@ def notify(message):
     response.raise_for_status()
     if response.text.strip().lower() != "ok":
         raise RuntimeError("Slack webhook returned an unexpected response")
+    print("Slack notification delivered successfully (HTTP %s)" % response.status_code)
     return True

@@ -1,3 +1,34 @@
-# Explicitly registered public .onion URLs only.
-# Example:
-# http://example.onion/
+# Public ransomware data-leak-site landing pages (.onion) for defensive OSINT.
+# Source: Ransomware.live group infrastructure pages.
+# URLs/status were checked against public listings on 2026-11-19.
+# Onion mirrors are volatile; revalidate periodically. Offline entries are retained
+# only when the group is active and the URL is still listed as its data-leak site.
+# Do not download leaked files or interact with attacker services.
+#
+# Qilin (listed online 2026-11-17)
+http://ijzn3sicrcy7guixkzjkib4ukbiilwc3xhnmby4mcbccnsd7j2rekvqd.onion/
+#
+# Metaencryptor (both mirrors listed online 2026-11-19)
+http://metacrptmytukkj7ajwjovdpjqzd7esg5v3sg344uzhigagpezcqlpyd.onion/
+http://metacrpttdfpbm4qoxzcrqqgr6e6zafpazgxm72knmujw2mwvi34rwad.onion/
+#
+# CMD Organization (listed online 2026-11-16)
+http://cmdnkiqjije2tllr3biee2sjgj3i4robg2cbtilbnytdhh2wy3syrlyd.onion/
+#
+# Wallstreet (listed online 2026-11-19)
+http://4dwiv37h7hhuhjpvtn72hme4ylcv3qoe65arfc6mbweal7als6ma7pyd.onion/
+#
+# Beast (listed online 2026-11-19)
+http://beast6azu4f7fxjakiayhnssybibsgjnmy77a6duufqw5afjzfjhzuqd.onion/
+#
+# Abyss (listed online 2026-11-19)
+http://3ev4metjirohtdpshsqlkrqcmxq6zu3d7obrdhglpy5jpbr7whmlfgqd.onion/
+#
+# Insomnia (listed online 2026-11-18)
+http://i62huw7ve22rpyw6lnq3kmfump2dmsg4xpveec3ere73njwatrz74gad.onion/
+#
+# Chaos (listed online 2026-11-19)
+http://hptqq2o2qjva7lcaaq67w36jihzivkaitkexorauw7b2yul2z6zozpqd.onion/
+#
+# Payload (data-leak-site URL; listed offline on 2026-11-19, group active)
+http://payloadrz5yw227brtbvdqpnlhq3rdcdekdnn3rgucbcdeawq2v6vuy.onion/

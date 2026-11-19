@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "15 */6 * * *"
 
+concurrency:
+  group: tor-watch-public-osint
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pages: write

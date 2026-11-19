@@ -1,0 +1,36 @@
+name: Publish Tor Watch Web
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 */6 * * *"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  monitor-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Tor
+        run: sudo apt-get update && sudo apt-get install -y tor
+      - name: Start Tor
+        run: sudo systemctl start tor
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Monitor
+        run: python -m torwatch.cli --run
+      - name: Export web data
+        run: python scripts/export_web.py
+      - name: Deploy to GitHub Pages
+        uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - uses: actions/deploy-pages@v4

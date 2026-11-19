@@ -13,7 +13,6 @@ from bs4 import BeautifulSoup
 
 from .config import CONFIG, load_assets
 from .storage import add_threat_item, list_threat_items, enqueue_notification
-from .notifier import notify
 
 UA = "TorWatch-Public-OSINT/0.4 (+public defensive monitoring)"
 MAX_BYTES = 2_000_000

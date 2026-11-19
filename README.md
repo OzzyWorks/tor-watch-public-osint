@@ -31,3 +31,7 @@ GitHub ActionsではリポジトリSecret `SLACK_WEBHOOK_URL` を設定すると
 
 ## Demo
 `python -m torwatch.cli --demo` でTor接続なしのサンプルデータを生成できます.
+
+
+## Web dashboard
+The `web/` directory is a static dashboard designed for GitHub Pages. GitHub Actions runs the monitor, exports `data/history.db` to `web/data.json`, and publishes the dashboard. Enable GitHub Pages with the Actions deployment workflow as the source.

@@ -5,6 +5,7 @@ from .crawler import fetch
 from .risk import score
 from .storage import get, save, add_event
 from .diff import excerpt
+from .threat_intel import run_public_monitor
 
 def run(demo=False):
     keywords=load_lines("keywords.txt")
@@ -28,22 +29,16 @@ def run(demo=False):
             risk,reasons=score(text,keywords,assets)
             state="new" if not old else ("changed" if old[2]!=sha else "unchanged")
             diff=excerpt(old[3],text) if old and state=="changed" else ""
-
             save(url,title,sha,text,risk,reasons)
-
             if state in ("new","changed") or risk>=40:
                 add_event(url,title,state,risk,reasons,diff)
-
-            results.append({
-                "url":url,"title":title,"state":state,
-                "risk":risk,"reasons":reasons,"diff":diff
-            })
+            results.append({"url":url,"title":title,"state":state,
+                            "risk":risk,"reasons":reasons,"diff":diff})
         except Exception as e:
-            results.append({
-                "url":url,"state":"error","risk":0,
-                "reasons":[str(e)]
-            })
+            results.append({"url":url,"state":"error","risk":0,"reasons":[str(e)]})
 
+    if not demo:
+        run_public_monitor()
     print(json.dumps(results,ensure_ascii=False,indent=2))
     return results
 

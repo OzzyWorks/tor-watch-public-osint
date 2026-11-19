@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tor Watch | Public OSINT Monitor</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#0b1020;color:#e8edf7}
+.wrap{max-width:1100px;margin:auto;padding:32px 20px}.brand{font-size:28px;font-weight:800}.sub{color:#8f9bb3}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:25px 0}
+.card,.panel{background:#151c30;border:1px solid #27314b;border-radius:14px;padding:18px}.num{font-size:30px;font-weight:800}.label{color:#8f9bb3}
+input{width:100%;box-sizing:border-box;padding:14px;border-radius:10px;border:1px solid #34415f;background:#0e1425;color:#fff;margin-bottom:18px}
+.row{display:grid;grid-template-columns:1fr 90px 1fr 170px;gap:12px;padding:15px 0;border-bottom:1px solid #27314b;align-items:center}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.critical{background:#5b1720;color:#ffb7c0}.high{background:#573b12;color:#ffd98a}.normal{background:#123d2a;color:#9ce7bd}
+@media(max-width:750px){.cards{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr 70px}.row>*:nth-child(n+3){grid-column:1/-1}}
+</style></head><body><div class="wrap">
+<div class="brand">🛡️ TOR WATCH</div><div class="sub">Public OSINT Monitor · Registered public .onion pages only</div>
+<div class="cards" id="cards"></div>
+<div class="panel"><input id="q" placeholder="監視対象・タイトル・検出理由を検索…"><div id="updated" class="sub"></div><div id="list"></div></div>
+</div>
+<script>
+async function load(){const r=await fetch('data.json?'+Date.now());const d=await r.json();
+const rows=d.pages||[]; const c=[['監視対象',rows.length],['CRITICAL',rows.filter(x=>x.risk>=70).length],['HIGH',rows.filter(x=>x.risk>=40&&x.risk<70).length],['NORMAL',rows.filter(x=>x.risk<40).length]];
+document.getElementById('cards').innerHTML=c.map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="num">'+x[1]+'</div></div>').join('');
+document.getElementById('updated').textContent='最終更新: '+(d.updated_at||'—');
+function render(){const q=document.getElementById('q').value.toLowerCase();const a=rows.filter(x=>JSON.stringify(x).toLowerCase().includes(q)).sort((a,b)=>b.risk-a.risk);
+document.getElementById('list').innerHTML=a.map(x=>{let cls=x.risk>=70?'critical':x.risk>=40?'high':'normal';let lv=x.risk>=70?'CRITICAL':x.risk>=40?'HIGH':'NORMAL';return '<div class="row"><div><b>'+esc(x.title||x.url)+'</b><div class="sub">'+esc(x.url)+'</div></div><div><span class="badge '+cls+'">'+lv+' '+x.risk+'</span></div><div>'+esc(x.reasons||'—')+'</div><div class="sub">'+esc(x.checked_at||'')+'</div></div>'}).join('')||'<p class="sub">該当なし</p>'}
+document.getElementById('q').oninput=render;render()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+load().catch(e=>document.getElementById('list').innerHTML='<p>データを読み込めませんでした。</p>');
+</script></body></html>

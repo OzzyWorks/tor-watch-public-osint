@@ -5,15 +5,37 @@ from datetime import datetime, timezone
 
 DB=Path("data/history.db")
 OUT=Path("web/data.json")
+
+def _level(risk):
+    if risk >= 85: return "CRITICAL"
+    if risk >= 70: return "HIGH"
+    if risk >= 50: return "MEDIUM"
+    return "LOW"
+
+def _reason_fields(raw, risk):
+    parts=[x.strip() for x in str(raw or "").split(" | ") if x.strip()]
+    companies=[x.split(":",1)[1].strip() for x in parts if x.startswith("company:")]
+    return {
+        "reason_items":parts,
+        "companies":companies,
+        "risk_level":_level(risk),
+    }
+
 pages=[]
 events=[]
 threat_alerts=[]
 if DB.exists():
     con=sqlite3.connect(DB)
     rows=con.execute("SELECT url,title,risk,reasons,checked_at FROM pages ORDER BY risk DESC,checked_at DESC").fetchall()
-    pages=[{"url":r[0],"title":r[1],"risk":r[2],"reasons":r[3],"checked_at":r[4]} for r in rows]
+    for r in rows:
+        item={"url":r[0],"title":r[1],"risk":r[2],"reasons":r[3],"checked_at":r[4]}
+        item.update(_reason_fields(r[3],r[2]))
+        pages.append(item)
     ev=con.execute("SELECT id,url,title,event_type,risk,reasons,diff,detected_at FROM events ORDER BY id DESC LIMIT 100").fetchall()
-    events=[{"id":r[0],"url":r[1],"title":r[2],"event_type":r[3],"risk":r[4],"reasons":r[5],"diff":r[6],"detected_at":r[7]} for r in ev]
+    for r in ev:
+        item={"id":r[0],"url":r[1],"title":r[2],"event_type":r[3],"risk":r[4],"reasons":r[5],"diff":r[6],"detected_at":r[7]}
+        item.update(_reason_fields(r[5],r[4]))
+        events.append(item)
     try:
         rows=con.execute("""SELECT id,source,title,url,published,matched_assets,risk,reasons,status,detected_at
             FROM threat_items ORDER BY detected_at DESC LIMIT 100""").fetchall()

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 DB = Path(__file__).resolve().parent.parent / "data" / "history.db"
 
 def init():
+    DB.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB)
     con.execute("""CREATE TABLE IF NOT EXISTS pages(
         url TEXT PRIMARY KEY, title TEXT, sha256 TEXT, text TEXT,
@@ -17,6 +18,10 @@ def init():
         id TEXT PRIMARY KEY, source TEXT, title TEXT, url TEXT,
         published TEXT, matched_assets TEXT, risk INTEGER,
         reasons TEXT, status TEXT, detected_at TEXT)""")
+    con.execute("""CREATE TABLE IF NOT EXISTS notification_queue(
+        id TEXT PRIMARY KEY, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
+        attempts INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL,
+        sent_at TEXT, last_error TEXT)""")
     con.commit()
     return con
 
@@ -43,6 +48,37 @@ def add_event(url,title,event_type,risk,reasons,diff=""):
         VALUES(?,?,?,?,?,?,?)""",
         (url,title,event_type,risk," | ".join(reasons),diff,
          datetime.now(timezone.utc).isoformat()))
+    con.commit()
+    con.close()
+
+def enqueue_notification(notification_id, message):
+    con=init()
+    cur=con.execute("""INSERT OR IGNORE INTO notification_queue
+        (id,message,status,attempts,created_at) VALUES(?,?,'pending',0,?)""",
+        (notification_id,message,datetime.now(timezone.utc).isoformat()))
+    inserted=cur.rowcount == 1
+    con.commit()
+    con.close()
+    return inserted
+
+def pending_notifications(limit=30):
+    con=init()
+    rows=con.execute("""SELECT id,message,attempts FROM notification_queue
+        WHERE status='pending' ORDER BY created_at LIMIT ?""",(limit,)).fetchall()
+    con.close()
+    return [{"id":r[0],"message":r[1],"attempts":r[2]} for r in rows]
+
+def mark_notification_sent(notification_id):
+    con=init()
+    con.execute("""UPDATE notification_queue SET status='sent',sent_at=?,last_error=NULL
+        WHERE id=?""",(datetime.now(timezone.utc).isoformat(),notification_id))
+    con.commit()
+    con.close()
+
+def mark_notification_failed(notification_id,error):
+    con=init()
+    con.execute("""UPDATE notification_queue SET attempts=attempts+1,last_error=?
+        WHERE id=?""",(str(error)[:500],notification_id))
     con.commit()
     con.close()
 

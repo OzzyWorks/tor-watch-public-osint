@@ -39,6 +39,12 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 </section>
 
 <section class="panel">
+<h2>🏦 監視企業に関する公開情報アラート</h2>
+<div class="sub">公開RSS・報道の記載を検出。企業による被害確認を意味するものではありません。</div>
+<div id="threatAlerts"></div>
+</section>
+
+<section class="panel">
 <h2>🔎 監視対象を検索</h2>
 <input class="search" id="q" placeholder="URL、タイトル、検出理由などを検索…">
 <div id="pages"></div>
@@ -52,6 +58,7 @@ const level=r=>r>=70?["CRITICAL","critical"]:r>=40?["HIGH","high"]:["NORMAL","no
 
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
+ renderThreatAlerts();
  const counts=[["監視対象",p.length,"blue"],["CRITICAL",p.filter(x=>x.risk>=70).length,"red"],["HIGH",p.filter(x=>x.risk>=40&&x.risk<70).length,"orange"],["NORMAL",p.filter(x=>x.risk<40).length,"green"]];
  document.getElementById("cards").innerHTML=counts.map(x=>'<div class="card"><div class="sub">'+x[0]+'</div><div class="num '+x[2]+'">'+x[1]+'</div></div>').join("");
 
@@ -65,6 +72,23 @@ function render(){
  }).join("")||'<div class="empty">まだアラートはありません。</div>';
 
  renderPages();
+}
+function renderThreatAlerts(){
+ const items=DATA.threat_alerts||[];
+ const host=document.getElementById("threatAlerts");
+ if(!host)return;
+ host.innerHTML=items.slice(0,30).map(x=>{
+   const l=level(x.risk);
+   const href=String(x.url||"");
+   const safeUrl=/^https:\/\//i.test(href)?href:"";
+   return '<div class="alert"><div><span class="badge '+l[1]+'">'+l[0]+' '+x.risk+'</span></div>'+
+   '<div><div class="title">'+(safeUrl?'<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a>':esc(x.title))+'</div>'+
+   '<div class="meta">対象企業: '+esc(x.matched_assets||"—")+'</div>'+
+   '<div class="meta">'+esc(x.source)+' · '+esc(x.published||x.detected_at||"")+'</div>'+
+   '<div class="meta">'+esc(x.status||"公開情報・未確認")+'</div>'+
+   '<div class="meta">'+esc(x.reasons||"")+'</div></div>'+
+   '<div class="meta">'+esc(x.detected_at||"")+'</div></div>';
+ }).join("")||'<div class="empty">企業名と脅威関連語が一致した新着情報はありません。</div>';
 }
 function renderPages(){
  const q=document.getElementById("q").value.toLowerCase();

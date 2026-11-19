@@ -70,7 +70,10 @@ def _send_queued_notifications():
             print(f"Slack notification failed (id={item['id']}): {str(exc)[:250]}")
     print(f"Slack notifications: sent={sent}, failed={failed}, remaining_pending={failed}")
 
-def run(demo=False, test_slack=False):\n    if test_slack:\n        notify("🛡️ Tor Watch Slack接続テスト：Webhookへの送信に成功しました。")\n        return [{"slack_test":"sent"}]
+def run(demo=False, test_slack=False):
+    if test_slack:
+        notify("🛡️ Tor Watch Slack接続テスト：Webhookへの送信に成功しました。")
+        return [{"slack_test":"sent"}]
     keywords=load_lines("keywords.txt")
     assets=load_assets().get("assets",{})
     urls=load_lines("watchlist.txt")

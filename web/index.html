@@ -78,7 +78,7 @@ function renderThreatAlerts(){
  const host=document.getElementById("threatAlerts");
  if(!host)return;
  host.innerHTML=items.slice(0,30).map(x=>{
-   const l=level(x.risk);
+   const l=x.risk>=85?["CRITICAL","critical"]:x.risk>=65?["HIGH","high"]:["MEDIUM","normal"];
    const href=String(x.url||"");
    const safeUrl=/^https:\/\//i.test(href)?href:"";
    return '<div class="alert"><div><span class="badge '+l[1]+'">'+l[0]+' '+x.risk+'</span></div>'+

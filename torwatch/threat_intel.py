@@ -78,7 +78,7 @@ def _risk(text):
     strong=[term for term in THREAT_STRONG if term.casefold() in low]
     medium=[term for term in THREAT_MEDIUM if term.casefold() in low]
     if strong:
-        return 85,["incident_term:"+x for x in strong[:4]]
+        return 75,["incident_term:"+x for x in strong[:4]]
     if medium:
         return 55,["incident_term:"+x for x in medium[:3]]
     return 0,[]
@@ -143,7 +143,10 @@ def run_public_monitor():
                             f"*検出語:* {', '.join(x.split(':',1)[1] for x in reasons if x.startswith('incident_term:'))}\n"
                             f"*確認状況:* {item['status']}\n{url}"
                         )
-                        notify(message)
+                        try:
+                            notify(message)
+                        except Exception as notify_error:
+                            print("Slack notification failed:",str(notify_error)[:200])
             results.append({"source":source.get("name","?"),"items":len(entries),"new_alerts":new_count})
         except Exception as exc:
             results.append({"source":source.get("name","?"),"error":str(exc)[:300]})

@@ -54,19 +54,31 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <script>
 let DATA={pages:[],events:[]};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const level=r=>r>=70?["CRITICAL","critical"]:r>=40?["HIGH","high"]:["NORMAL","normal"];
+const level=r=>r>=85?["CRITICAL","critical"]:r>=70?["HIGH","high"]:r>=50?["MEDIUM","high"]:["LOW","normal"];
+const readableReason=s=>{
+ const v=String(s||"");
+ if(v.startsWith("company:"))return "対象企業: "+v.slice(8);
+ if(v.startsWith("nearby_breach:"))return "企業名の近くにある漏洩・攻撃関連語: "+v.slice(14);
+ if(v.startsWith("nearby_data:"))return "企業名の近くにある情報種別: "+v.slice(12);
+ if(v.startsWith("global_keyword:"))return "ページ全体の関連語（参考）: "+v.slice(15);
+ if(v.startsWith("basis:"))return v.slice(6);
+ if(v.startsWith("keyword:"))return "検出キーワード（ページ全体）: "+v.slice(8);
+ if(v.startsWith("asset:"))return "監視対象との一致: "+v.slice(6);
+ return v;
+};
+const reasonLines=x=>(x.reason_items||String(x.reasons||"").split(" | ")).map(readableReason);
 
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
  renderThreatAlerts();
- const counts=[["監視対象",p.length,"blue"],["CRITICAL",p.filter(x=>x.risk>=70).length,"red"],["HIGH",p.filter(x=>x.risk>=40&&x.risk<70).length,"orange"],["NORMAL",p.filter(x=>x.risk<40).length,"green"]];
+ const counts=[["監視対象",p.length,"blue"],["CRITICAL",p.filter(x=>x.risk>=85).length,"red"],["HIGH",p.filter(x=>x.risk>=70&&x.risk<85).length,"orange"],["MEDIUM以下",p.filter(x=>x.risk<70).length,"green"]];
  document.getElementById("cards").innerHTML=counts.map(x=>'<div class="card"><div class="sub">'+x[0]+'</div><div class="num '+x[2]+'">'+x[1]+'</div></div>').join("");
 
  document.getElementById("alerts").innerHTML=e.slice(0,20).map(x=>{
    const l=level(x.risk);
    return '<div class="alert"><div><span class="badge '+l[1]+'">'+l[0]+' '+x.risk+'</span></div>'+
    '<div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.event_type.toUpperCase())+' · '+esc(x.url)+'</div>'+
-   '<div class="meta">'+esc(x.reasons||"検出理由なし")+'</div>'+
+   '<div class="meta">'+esc(reasonLines(x).join(" / ")||"判定根拠なし")+'</div>'+
    (x.diff?'<details><summary>変更箇所を見る</summary><pre>'+esc(x.diff)+'</pre></details>':'')+
    '</div><div class="meta">'+esc(x.detected_at||"")+'</div></div>';
  }).join("")||'<div class="empty">まだアラートはありません。</div>';
@@ -95,8 +107,10 @@ function renderPages(){
  const p=(DATA.pages||[]).filter(x=>JSON.stringify(x).toLowerCase().includes(q)).sort((a,b)=>b.risk-a.risk);
  document.getElementById("pages").innerHTML=p.map(x=>{
    const l=level(x.risk);
-   return '<div class="row"><div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.url)+'</div></div>'+
-   '<div><span class="badge '+l[1]+'">'+l[0]+'</span></div><div class="meta">'+esc(x.reasons||"—")+'</div>'+
+   const companies=(x.companies||[]).length?x.companies.join("、"):"企業名の一致なし";
+   const reasons=reasonLines(x);
+   return '<div class="row"><div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">対象企業: '+esc(companies)+'</div><div class="meta">'+esc(x.url)+'</div></div>'+
+   '<div><span class="badge '+l[1]+'">'+l[0]+' '+x.risk+'</span></div><div class="meta">'+reasons.map(v=>'<div>• '+esc(v)+'</div>').join("")+'</div>'+
    '<div class="meta">'+esc(x.checked_at||"")+'</div></div>';
  }).join("")||'<div class="empty">該当する監視対象はありません。</div>';
 }

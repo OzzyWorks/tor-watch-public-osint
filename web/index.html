@@ -1,28 +1,91 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tor Watch | Public OSINT Monitor</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOR WATCH — Public OSINT</title>
 <style>
-body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#0b1020;color:#e8edf7}
-.wrap{max-width:1100px;margin:auto;padding:32px 20px}.brand{font-size:28px;font-weight:800}.sub{color:#8f9bb3}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:25px 0}
-.card,.panel{background:#151c30;border:1px solid #27314b;border-radius:14px;padding:18px}.num{font-size:30px;font-weight:800}.label{color:#8f9bb3}
-input{width:100%;box-sizing:border-box;padding:14px;border-radius:10px;border:1px solid #34415f;background:#0e1425;color:#fff;margin-bottom:18px}
-.row{display:grid;grid-template-columns:1fr 90px 1fr 170px;gap:12px;padding:15px 0;border-bottom:1px solid #27314b;align-items:center}
-.badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.critical{background:#5b1720;color:#ffb7c0}.high{background:#573b12;color:#ffd98a}.normal{background:#123d2a;color:#9ce7bd}
-@media(max-width:750px){.cards{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr 70px}.row>*:nth-child(n+3){grid-column:1/-1}}
-</style></head><body><div class="wrap">
-<div class="brand">🛡️ TOR WATCH</div><div class="sub">Public OSINT Monitor · Registered public .onion pages only</div>
-<div class="cards" id="cards"></div>
-<div class="panel"><input id="q" placeholder="監視対象・タイトル・検出理由を検索…"><div id="updated" class="sub"></div><div id="list"></div></div>
+*{box-sizing:border-box}body{margin:0;background:#090d18;color:#e9eef8;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:1200px;margin:auto;padding:28px 20px}.brand{font-size:30px;font-weight:900;letter-spacing:.04em}.sub{color:#8490a8;font-size:13px}
+.header{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:25px}
+.status{padding:7px 11px;border:1px solid #293550;border-radius:999px;font-size:12px;color:#9aa8c2}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.card,.panel{background:#121827;border:1px solid #222d45;border-radius:15px}.card{padding:18px}.num{font-size:32px;font-weight:850;margin-top:5px}
+.red{color:#ff7380}.orange{color:#ffc568}.green{color:#6ed9a0}.blue{color:#7cb8ff}
+.panel{padding:20px;margin-bottom:18px}.panel h2{font-size:16px;margin:0 0 15px}
+.search{width:100%;padding:13px 15px;border:1px solid #34415e;border-radius:10px;background:#0b1020;color:#fff;outline:none}
+.alert{display:grid;grid-template-columns:105px 1fr 130px;gap:15px;padding:15px 0;border-bottom:1px solid #222d45;align-items:start}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800}.critical{background:#541721;color:#ffb5bf}.high{background:#5a3d13;color:#ffd98c}.normal{background:#123b29;color:#9ae6ba}
+.title{font-weight:750}.meta{color:#7f8ca5;font-size:12px;margin-top:5px;line-height:1.5}
+details{margin-top:8px;color:#aeb9cc;font-size:12px}details pre{white-space:pre-wrap;background:#0b1020;padding:12px;border-radius:8px;overflow:auto}
+.row{display:grid;grid-template-columns:1fr 90px 1fr 165px;gap:12px;padding:13px 0;border-bottom:1px solid #222d45;align-items:center}
+button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8px;padding:7px 11px;cursor:pointer}
+.empty{padding:24px 0;color:#7f8ca5}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.alert{grid-template-columns:80px 1fr}.alert>:last-child{grid-column:2}.row{grid-template-columns:1fr 80px}.row>:nth-child(n+3){grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="header">
+<div><div class="brand">🛡️ TOR WATCH</div><div class="sub">PUBLIC OSINT MONITOR · 登録済み公開 .onion ページのみ</div></div>
+<div class="status" id="status">データ読み込み中…</div>
+</header>
+
+<section class="cards" id="cards"></section>
+
+<section class="panel">
+<h2>🔴 最新アラート</h2>
+<div id="alerts"></div>
+</section>
+
+<section class="panel">
+<h2>🔎 監視対象を検索</h2>
+<input class="search" id="q" placeholder="URL、タイトル、検出理由などを検索…">
+<div id="pages"></div>
+</section>
 </div>
+
 <script>
-async function load(){const r=await fetch('data.json?'+Date.now());const d=await r.json();
-const rows=d.pages||[]; const c=[['監視対象',rows.length],['CRITICAL',rows.filter(x=>x.risk>=70).length],['HIGH',rows.filter(x=>x.risk>=40&&x.risk<70).length],['NORMAL',rows.filter(x=>x.risk<40).length]];
-document.getElementById('cards').innerHTML=c.map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="num">'+x[1]+'</div></div>').join('');
-document.getElementById('updated').textContent='最終更新: '+(d.updated_at||'—');
-function render(){const q=document.getElementById('q').value.toLowerCase();const a=rows.filter(x=>JSON.stringify(x).toLowerCase().includes(q)).sort((a,b)=>b.risk-a.risk);
-document.getElementById('list').innerHTML=a.map(x=>{let cls=x.risk>=70?'critical':x.risk>=40?'high':'normal';let lv=x.risk>=70?'CRITICAL':x.risk>=40?'HIGH':'NORMAL';return '<div class="row"><div><b>'+esc(x.title||x.url)+'</b><div class="sub">'+esc(x.url)+'</div></div><div><span class="badge '+cls+'">'+lv+' '+x.risk+'</span></div><div>'+esc(x.reasons||'—')+'</div><div class="sub">'+esc(x.checked_at||'')+'</div></div>'}).join('')||'<p class="sub">該当なし</p>'}
-document.getElementById('q').oninput=render;render()}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-load().catch(e=>document.getElementById('list').innerHTML='<p>データを読み込めませんでした。</p>');
-</script></body></html>
+let DATA={pages:[],events:[]};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const level=r=>r>=70?["CRITICAL","critical"]:r>=40?["HIGH","high"]:["NORMAL","normal"];
+
+function render(){
+ const p=DATA.pages||[], e=DATA.events||[];
+ const counts=[["監視対象",p.length,"blue"],["CRITICAL",p.filter(x=>x.risk>=70).length,"red"],["HIGH",p.filter(x=>x.risk>=40&&x.risk<70).length,"orange"],["NORMAL",p.filter(x=>x.risk<40).length,"green"]];
+ document.getElementById("cards").innerHTML=counts.map(x=>'<div class="card"><div class="sub">'+x[0]+'</div><div class="num '+x[2]+'">'+x[1]+'</div></div>').join("");
+
+ document.getElementById("alerts").innerHTML=e.slice(0,20).map(x=>{
+   const l=level(x.risk);
+   return '<div class="alert"><div><span class="badge '+l[1]+'">'+l[0]+' '+x.risk+'</span></div>'+
+   '<div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.event_type.toUpperCase())+' · '+esc(x.url)+'</div>'+
+   '<div class="meta">'+esc(x.reasons||"検出理由なし")+'</div>'+
+   (x.diff?'<details><summary>変更箇所を見る</summary><pre>'+esc(x.diff)+'</pre></details>':'')+
+   '</div><div class="meta">'+esc(x.detected_at||"")+'</div></div>';
+ }).join("")||'<div class="empty">まだアラートはありません。</div>';
+
+ renderPages();
+}
+function renderPages(){
+ const q=document.getElementById("q").value.toLowerCase();
+ const p=(DATA.pages||[]).filter(x=>JSON.stringify(x).toLowerCase().includes(q)).sort((a,b)=>b.risk-a.risk);
+ document.getElementById("pages").innerHTML=p.map(x=>{
+   const l=level(x.risk);
+   return '<div class="row"><div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.url)+'</div></div>'+
+   '<div><span class="badge '+l[1]+'">'+l[0]+'</span></div><div class="meta">'+esc(x.reasons||"—")+'</div>'+
+   '<div class="meta">'+esc(x.checked_at||"")+'</div></div>';
+ }).join("")||'<div class="empty">該当する監視対象はありません。</div>';
+}
+document.getElementById("q").addEventListener("input",renderPages);
+
+async function load(){
+ try{
+  const r=await fetch("data.json?ts="+Date.now()); DATA=await r.json();
+  document.getElementById("status").textContent="最終更新 "+new Date(DATA.updated_at).toLocaleString("ja-JP");
+  render();
+ }catch(e){document.getElementById("status").textContent="データ取得エラー"}
+}
+load();
+</script>
+</body>
+</html>

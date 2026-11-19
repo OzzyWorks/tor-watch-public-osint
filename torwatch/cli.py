@@ -133,6 +133,7 @@ def run(demo=False, test_slack=False):
 if __name__=="__main__":
     p=argparse.ArgumentParser()
     p.add_argument("--run",action="store_true")
-    p.add_argument("--demo",action="store_true")\n    p.add_argument("--test-slack",action="store_true",help="Send a one-time Slack webhook test")
+    p.add_argument("--demo",action="store_true")
+    p.add_argument("--test-slack",action="store_true",help="Send a one-time Slack webhook test")
     a=p.parse_args()
     run(demo=a.demo,test_slack=a.test_slack)

@@ -1,0 +1,21 @@
+groups:
+  - name: Qilin
+    hosts: [ijzn3sicrcy7guixkzjkib4ukbiilwc3xhnmby4mcbccnsd7j2rekvqd.onion]
+  - name: Metaencrypter
+    hosts:
+      - metacrptmytukkj7ajwjovdpjqzd7esg5v3sg344uzhigagpezcqlpyd.onion
+      - metacrpttdfpbm4qoxzcrqqgr6e6zafpazgxm72knmujw2mwvi34rwad.onion
+  - name: CMD Organization
+    hosts: [cmdnkiqjije2tllr3biee2sjgj3i4robg2cbtilbnytdhh2wy3syrlyd.onion]
+  - name: Wallstreet
+    hosts: [4dwiv37h7hhuhjpvtn72hme4ylcv3qoe65arfc6mbweal7als6ma7pyd.onion]
+  - name: Beast
+    hosts: [beast6azu4f7fxjakiayhnssybibsgjnmy77a6duufqw5afjzfjhzuqd.onion]
+  - name: Abyss
+    hosts: [3ev4metjirohtdpshsqlkrqcmxq6zu3d7obrdhglpy5jpbr7whmlfgqd.onion]
+  - name: Insomnia
+    hosts: [i62huw7ve22rpyw6lnq3kmfump2dmsg4xpveec3ere73njwatrz74gad.onion]
+  - name: Chaos
+    hosts: [hptqq2o2qjva7lcaaq67w36jihzivkaitkexorauw7b2yul2z6zozpqd.onion]
+  - name: Payload
+    hosts: [payloadrz5yw227brtbvdqpnlhq3rdcdekdnn3rgucbcdeawq2v6vuy.onion]

@@ -27,6 +27,8 @@ def _reason_text(reasons):
             labels.append("企業名の近くで検出した漏洩・攻撃関連語: "+reason.split(":",1)[1])
         elif reason.startswith("nearby_data:"):
             labels.append("企業名の近くで検出した情報種別: "+reason.split(":",1)[1])
+        elif reason.startswith("nearby_claim:"):
+            labels.append("企業名の近くで検出した掲載情報: "+reason.split(":",1)[1])
         elif reason.startswith("global_keyword:"):
             labels.append("ページ全体の参考キーワード: "+reason.split(":",1)[1])
         elif reason.startswith("basis:"):
@@ -105,6 +107,8 @@ def run(demo=False, test_slack=False):
                 (old is None and risk>=50) or
                 (state=="changed" and risk>=70) or
                 (old is not None and old_risk<70 and risk>=70) or
+                # Notify once when a previously low-risk company listing gains a data-volume claim.
+                (old is not None and old_risk<55 and risk>=55) or
                 # Backfill pre-existing high-risk dashboard findings once.
                 (old is not None and state=="unchanged" and risk>=70)
             )

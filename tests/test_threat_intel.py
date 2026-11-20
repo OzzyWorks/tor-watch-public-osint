@@ -31,6 +31,12 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertEqual(risk, 55)
         self.assertTrue(any(x.startswith("nearby_claim:data size") for x in reasons))
 
+    def test_generic_employee_and_client_words_do_not_make_critical(self):
+        page = "Former clients and employees. Sekisui House " + ("company profile " * 10) + "1 TB Data size leak"
+        risk, reasons = score(page, [], {"names": ["Sekisui House"]})
+        self.assertEqual(risk, 70)
+        self.assertFalse(any(x.startswith("nearby_data:") for x in reasons))
+
     def test_company_name_alone_is_not_high(self):
         risk,reasons=score("Sekisui House announced a new office.",[],{"names":["Sekisui House"]})
         self.assertLess(risk,70)

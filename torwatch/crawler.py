@@ -100,6 +100,7 @@ def fetch(url, timeout=20):
         "https": "socks5h://127.0.0.1:9050",
     })
     headers = {"User-Agent": USER_AGENT}
+    final_url=url
     response = _get_with_retry(session, url, timeout, headers)
     redirect_codes=(301,302,303,307,308)
     if response.status_code in redirect_codes:
@@ -107,6 +108,7 @@ def fetch(url, timeout=20):
         if not target:
             raise ValueError(f"HTTP redirect {response.status_code} blocked: missing or unsafe same-host Location")
         response=_get_with_retry(session,target,timeout,headers)
+        final_url=target
         if response.status_code in redirect_codes or 300 <= response.status_code < 400:
             raise ValueError(f"HTTP redirect chain stopped after one hop (status {response.status_code})")
     elif 300 <= response.status_code < 400:
@@ -123,7 +125,7 @@ def fetch(url, timeout=20):
 
     # Inspect a small number of same-host post/detail pages. Never follow
     # external links or links that look like downloadable files.
-    for detail_url, label in _candidate_links(url, soup):
+    for detail_url, label in _candidate_links(final_url, soup):
         try:
             detail = session.get(
                 detail_url, timeout=(3, 5), headers=headers, allow_redirects=False

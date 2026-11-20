@@ -81,6 +81,8 @@ jobs:
             echo "Monitoring database unchanged"
           else
             git commit -m "Persist Tor Watch monitoring state [skip ci]"
+            # Rebase if source changes landed while monitoring was running.
+            git pull --rebase origin main
             git push
           fi
       - name: Export web data

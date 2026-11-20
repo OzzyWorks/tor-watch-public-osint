@@ -34,6 +34,18 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <section class="cards" id="cards"></section>
 
 <section class="panel">
+<h2>🏢 企業別脅威レーダー</h2>
+<div class="sub">監視ページ・公開報道から企業ごとの最大リスクと検知履歴を集計。自動マッチング結果であり、被害確定ではありません。</div>
+<div id="companyRadar"></div>
+</section>
+
+<section class="panel">
+<h2>🕵️ 攻撃グループ活動分析</h2>
+<div class="sub">監視中のリークサイト単位で集計。更新ページ数は新規・変更・再判定イベントのあるURLのユニーク数です。</div>
+<div id="groupActivity"></div>
+</section>
+
+<section class="panel">
 <h2>🔴 最新アラート</h2>
 <div id="alerts"></div>
 </section>
@@ -71,6 +83,8 @@ const reasonLines=x=>(x.reason_items||String(x.reasons||"").split(" | ")).map(re
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
  renderThreatAlerts();
+ renderCompanyRadar();
+ renderGroupActivity();
  const counts=[["監視対象",p.length,"blue"],["CRITICAL",p.filter(x=>x.risk>=85).length,"red"],["HIGH",p.filter(x=>x.risk>=70&&x.risk<85).length,"orange"],["MEDIUM以下",p.filter(x=>x.risk<70).length,"green"]];
  document.getElementById("cards").innerHTML=counts.map(x=>'<div class="card"><div class="sub">'+x[0]+'</div><div class="num '+x[2]+'">'+x[1]+'</div></div>').join("");
 
@@ -84,6 +98,30 @@ function render(){
  }).join("")||'<div class="empty">まだアラートはありません。</div>';
 
  renderPages();
+}
+function renderCompanyRadar(){
+ const items=DATA.company_radar||[];
+ const host=document.getElementById("companyRadar");
+ if(!host)return;
+ host.innerHTML=items.map(x=>{
+   const l=level(x.max_risk);
+   return '<div class="row"><div><div class="title">'+esc(x.company)+'</div><div class="meta">監視ページ '+x.monitored_pages+' · 高リスク '+x.high_risk_pages+'</div></div>'+
+   '<div><span class="badge '+l[1]+'">'+l[0]+' '+x.max_risk+'</span></div>'+
+   '<div class="meta">検知イベント '+x.event_count+' · 公開報道 '+x.public_reports+'</div>'+
+   '<div class="meta">最終確認 '+esc(x.last_seen||"—")+'</div></div>';
+ }).join("")||'<div class="empty">企業名に一致した監視記録はまだありません。</div>';
+}
+function renderGroupActivity(){
+ const items=DATA.group_activity||[];
+ const host=document.getElementById("groupActivity");
+ if(!host)return;
+ host.innerHTML=items.map(x=>{
+   const l=level(x.max_risk);
+   return '<div class="row"><div><div class="title">'+esc(x.group)+'</div><div class="meta">監視サイト '+x.monitored_sites+'</div></div>'+
+   '<div><span class="badge '+l[1]+'">'+l[0]+' '+x.max_risk+'</span></div>'+
+   '<div class="meta">高リスクサイト '+x.high_risk_sites+' · 更新ページ '+x.changed_pages+'</div>'+
+   '<div class="meta">最終確認 '+esc(x.last_seen||"—")+'</div></div>';
+ }).join("")||'<div class="empty">攻撃グループの監視記録はまだありません。</div>';
 }
 function renderThreatAlerts(){
  const items=DATA.threat_alerts||[];

@@ -9,7 +9,7 @@
 .wrap{max-width:1200px;margin:auto;padding:28px 20px}.brand{font-size:30px;font-weight:900;letter-spacing:.04em}.sub{color:#8490a8;font-size:13px}
 .header{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:25px}
 .status{padding:7px 11px;border:1px solid #293550;border-radius:999px;font-size:12px;color:#9aa8c2}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
 .card,.panel{background:#121827;border:1px solid #222d45;border-radius:15px}.card{padding:18px}.num{font-size:32px;font-weight:850;margin-top:5px}
 .red{color:#ff7380}.orange{color:#ffc568}.green{color:#6ed9a0}.blue{color:#7cb8ff}
 .panel{padding:20px;margin-bottom:18px}.panel h2{font-size:16px;margin:0 0 15px}
@@ -19,9 +19,11 @@
 .title{font-weight:750}.meta{color:#7f8ca5;font-size:12px;margin-top:5px;line-height:1.5}
 details{margin-top:8px;color:#aeb9cc;font-size:12px}details pre{white-space:pre-wrap;background:#0b1020;padding:12px;border-radius:8px;overflow:auto}
 .row{display:grid;grid-template-columns:1fr 90px 1fr 165px;gap:12px;padding:13px 0;border-bottom:1px solid #222d45;align-items:center}
+.health-row{display:grid;grid-template-columns:minmax(0,1fr) 105px minmax(170px,1fr) minmax(200px,1.2fr);gap:12px;padding:13px 0;border-bottom:1px solid #222d45;align-items:center}
 button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8px;padding:7px 11px;cursor:pointer}
 .empty{padding:24px 0;color:#7f8ca5}
-@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.alert{grid-template-columns:80px 1fr}.alert>:last-child{grid-column:2}.row{grid-template-columns:1fr 80px}.row>:nth-child(n+3){grid-column:1/-1}}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.alert{grid-template-columns:80px 1fr}.alert>:last-child{grid-column:2}.row{grid-template-columns:1fr 80px}.row>:nth-child(n+3){grid-column:1/-1}.health-row{grid-template-columns:1fr 100px}.health-row>:nth-child(n+3){grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -32,6 +34,12 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 </header>
 
 <section class="cards" id="cards"></section>
+
+<section class="panel">
+<h2>🛰️ 監視サイトの取得状況</h2>
+<div class="sub">取得エラーはリスク0ではなく「未取得」として別管理。最終成功時刻と連続失敗回数を表示します。</div>
+<div id="siteHealth"></div>
+</section>
 
 <section class="panel">
 <h2>🏢 企業別脅威レーダー</h2>
@@ -64,7 +72,7 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 </div>
 
 <script>
-let DATA={pages:[],events:[]};
+let DATA={pages:[],events:[],site_health:[]};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const level=r=>r>=85?["CRITICAL","critical"]:r>=70?["HIGH","high"]:r>=50?["MEDIUM","high"]:["LOW","normal"];
 const readableReason=s=>{
@@ -85,7 +93,9 @@ function render(){
  renderThreatAlerts();
  renderCompanyRadar();
  renderGroupActivity();
- const counts=[["監視対象",p.length,"blue"],["CRITICAL",p.filter(x=>x.risk>=85).length,"red"],["HIGH",p.filter(x=>x.risk>=70&&x.risk<85).length,"orange"],["MEDIUM以下",p.filter(x=>x.risk<70).length,"green"]];
+ renderSiteHealth();
+ const health=DATA.site_health||[];
+ const counts=[["監視サイト",health.length||"—","blue"],["取得エラー",health.length?health.filter(x=>x.status==="error").length:"—","red"],["CRITICAL",p.filter(x=>x.risk>=85).length,"red"],["HIGH",p.filter(x=>x.risk>=70&&x.risk<85).length,"orange"],["MEDIUM以下",p.filter(x=>x.risk<70).length,"green"]];
  document.getElementById("cards").innerHTML=counts.map(x=>'<div class="card"><div class="sub">'+x[0]+'</div><div class="num '+x[2]+'">'+x[1]+'</div></div>').join("");
 
  document.getElementById("alerts").innerHTML=e.slice(0,20).map(x=>{
@@ -98,6 +108,26 @@ function render(){
  }).join("")||'<div class="empty">まだアラートはありません。</div>';
 
  renderPages();
+}
+function errorTypeLabel(t){
+ const labels={timeout:"タイムアウト",onion_unreachable:"接続先到達不可",connection_refused:"接続拒否",tor_socks_error:"Tor SOCKSエラー",http_redirect:"HTTPリダイレクト",non_html_response:"HTML以外の応答",http_error:"HTTPエラー",connection_error:"通信エラー",fetch_error:"取得エラー"};
+ return labels[t]||"取得エラー";
+}
+function renderSiteHealth(){
+ const items=DATA.site_health||[];
+ const host=document.getElementById("siteHealth");
+ if(!host)return;
+ const sorted=[...items].sort((a,b)=>(a.status==="error"?0:1)-(b.status==="error"?0:1)||(b.consecutive_errors||0)-(a.consecutive_errors||0));
+ host.innerHTML=sorted.map(x=>{
+   const failed=x.status==="error";
+   const checked=x.checked_at?new Date(x.checked_at).toLocaleString("ja-JP"):"—";
+   const lastSuccess=x.last_success_at?new Date(x.last_success_at).toLocaleString("ja-JP"):"成功履歴なし";
+   const detail=failed?'<details><summary>'+esc(errorTypeLabel(x.error_type))+' · 詳細</summary><div>'+esc(x.error||"詳細なし")+'</div></details>':"HTML取得成功";
+   return '<div class="health-row"><div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.url)+'</div></div>'+
+     '<div><span class="badge '+(failed?"critical":"normal")+'">'+(failed?"取得エラー":"取得成功")+'</span></div>'+
+     '<div class="meta">最終確認 '+esc(checked)+'<br>最終成功 '+esc(lastSuccess)+'<br>'+(failed?"連続失敗 "+(x.consecutive_errors||0)+"回":"連続失敗なし")+'</div>'+
+     '<div class="meta">'+detail+'</div></div>';
+ }).join("")||'<div class="empty">取得状況の記録がありません。</div>';
 }
 function renderCompanyRadar(){
  const items=DATA.company_radar||[];

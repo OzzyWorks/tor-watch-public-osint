@@ -78,6 +78,21 @@ def _get_with_retry(session, url, timeout, headers):
             time.sleep(2)
 
 
+def _safe_redirect_target(base_url, location):
+    """Allow one redirect only when it stays on the same host and remains HTML-like."""
+    if not location:
+        return None
+    base=urlparse(base_url)
+    target=urljoin(base_url,location)
+    parsed=urlparse(target)
+    if parsed.scheme not in ("http","https") or parsed.hostname != base.hostname:
+        return None
+    path=parsed.path.lower()
+    if path.endswith(BLOCKED_EXTENSIONS) or any(part in path for part in BLOCKED_PATH_PARTS):
+        return None
+    return parsed._replace(fragment="").geturl()
+
+
 def fetch(url, timeout=20):
     session = requests.Session()
     session.proxies.update({
@@ -86,6 +101,16 @@ def fetch(url, timeout=20):
     })
     headers = {"User-Agent": USER_AGENT}
     response = _get_with_retry(session, url, timeout, headers)
+    redirect_codes=(301,302,303,307,308)
+    if response.status_code in redirect_codes:
+        target=_safe_redirect_target(url,response.headers.get("Location",""))
+        if not target:
+            raise ValueError(f"HTTP redirect {response.status_code} blocked: missing or unsafe same-host Location")
+        response=_get_with_retry(session,target,timeout,headers)
+        if response.status_code in redirect_codes or 300 <= response.status_code < 400:
+            raise ValueError(f"HTTP redirect chain stopped after one hop (status {response.status_code})")
+    elif 300 <= response.status_code < 400:
+        raise ValueError(f"Unexpected HTTP {response.status_code} response; no page content")
     response.raise_for_status()
     content_type = response.headers.get("Content-Type", "").lower()
     if content_type and "html" not in content_type:

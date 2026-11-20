@@ -33,6 +33,11 @@ def merge_databases(remote_path, local_path, output_path):
     con.row_factory = sqlite3.Row
     local = sqlite3.connect(local_path)
     local.row_factory = sqlite3.Row
+    con.execute("""CREATE TABLE IF NOT EXISTS site_checks(
+        url TEXT PRIMARY KEY, status TEXT NOT NULL, title TEXT NOT NULL DEFAULT '',
+        error_type TEXT NOT NULL DEFAULT '', error TEXT NOT NULL DEFAULT '',
+        checked_at TEXT NOT NULL, last_success_at TEXT,
+        consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
 
     # Keep the newest observation for each monitored URL.
     for row in local.execute("SELECT url,title,sha256,text,risk,reasons,checked_at FROM pages"):
@@ -59,6 +64,24 @@ def merge_databases(remote_path, local_path, output_path):
         con.execute("""INSERT OR IGNORE INTO threat_items
             (id,source,title,url,published,matched_assets,risk,reasons,status,detected_at)
             VALUES(?,?,?,?,?,?,?,?,?,?)""", tuple(row))
+
+    # Keep the latest per-site fetch status independently from risk observations.
+    try:
+        site_rows=local.execute("""SELECT url,status,title,error_type,error,checked_at,
+            last_success_at,consecutive_errors FROM site_checks""").fetchall()
+    except sqlite3.OperationalError:
+        site_rows=[]
+    for row in site_rows:
+        con.execute("""INSERT INTO site_checks
+            (url,status,title,error_type,error,checked_at,last_success_at,consecutive_errors)
+            VALUES(?,?,?,?,?,?,?,?)
+            ON CONFLICT(url) DO UPDATE SET
+            status=excluded.status,title=excluded.title,error_type=excluded.error_type,
+            error=excluded.error,checked_at=excluded.checked_at,
+            last_success_at=excluded.last_success_at,
+            consecutive_errors=excluded.consecutive_errors
+            WHERE COALESCE(excluded.checked_at,'') >= COALESCE(site_checks.checked_at,'')""",
+            tuple(row))
 
     # Preserve sent state if either copy has delivered the notification.
     for row in local.execute("""SELECT id,message,status,attempts,created_at,sent_at,last_error

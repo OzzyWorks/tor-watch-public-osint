@@ -22,6 +22,11 @@ def init():
         id TEXT PRIMARY KEY, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
         attempts INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL,
         sent_at TEXT, last_error TEXT)""")
+    con.execute("""CREATE TABLE IF NOT EXISTS site_checks(
+        url TEXT PRIMARY KEY, status TEXT NOT NULL, title TEXT NOT NULL DEFAULT '',
+        error_type TEXT NOT NULL DEFAULT '', error TEXT NOT NULL DEFAULT '',
+        checked_at TEXT NOT NULL, last_success_at TEXT,
+        consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
     con.commit()
     return con
 
@@ -30,6 +35,47 @@ def get(url):
     row=con.execute("SELECT url,title,sha256,text,risk,reasons,checked_at FROM pages WHERE url=?",(url,)).fetchone()
     con.close()
     return row
+
+def record_site_check(url,status,title="",error_type="",error=""):
+    """Record fetch health separately from a page's risk score."""
+    con=init()
+    now=datetime.now(timezone.utc).isoformat()
+    previous=con.execute(
+        "SELECT last_success_at,consecutive_errors,title FROM site_checks WHERE url=?",
+        (url,)
+    ).fetchone()
+    if status == "ok":
+        last_success_at=now
+        consecutive_errors=0
+        error_type=""
+        error=""
+    else:
+        last_success_at=previous[0] if previous else None
+        consecutive_errors=(int(previous[1] or 0)+1) if previous else 1
+    stored_title=title or (previous[2] if previous else "")
+    con.execute("""INSERT INTO site_checks
+        (url,status,title,error_type,error,checked_at,last_success_at,consecutive_errors)
+        VALUES(?,?,?,?,?,?,?,?)
+        ON CONFLICT(url) DO UPDATE SET
+        status=excluded.status,
+        title=CASE WHEN excluded.title<>'' THEN excluded.title ELSE site_checks.title END,
+        error_type=excluded.error_type,error=excluded.error,
+        checked_at=excluded.checked_at,last_success_at=excluded.last_success_at,
+        consecutive_errors=excluded.consecutive_errors""",
+        (url,status,stored_title,error_type,str(error)[:400],now,last_success_at,consecutive_errors))
+    con.commit()
+    con.close()
+
+def list_site_checks(limit=200):
+    con=init()
+    rows=con.execute("""SELECT url,status,title,error_type,error,checked_at,
+        last_success_at,consecutive_errors FROM site_checks
+        ORDER BY CASE WHEN status='error' THEN 0 ELSE 1 END,
+        consecutive_errors DESC,checked_at DESC LIMIT ?""",(limit,)).fetchall()
+    con.close()
+    keys=("url","status","title","error_type","error","checked_at",
+          "last_success_at","consecutive_errors")
+    return [dict(zip(keys,row)) for row in rows]
 
 def save(url,title,sha,text,risk,reasons):
     con=init()

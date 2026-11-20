@@ -31,6 +31,7 @@ def _reason_fields(raw, risk):
 pages=[]
 events=[]
 threat_alerts=[]
+site_health=[]
 if DB.exists():
     con=sqlite3.connect(DB)
     con.row_factory=sqlite3.Row
@@ -50,6 +51,14 @@ if DB.exists():
         threat_alerts=[dict(r) for r in rows]
     except sqlite3.OperationalError:
         pass
+    try:
+        rows=con.execute("""SELECT url,status,title,error_type,error,checked_at,
+            last_success_at,consecutive_errors FROM site_checks
+            ORDER BY CASE WHEN status='error' THEN 0 ELSE 1 END,
+            consecutive_errors DESC,checked_at DESC""").fetchall()
+        site_health=[dict(r) for r in rows]
+    except sqlite3.OperationalError:
+        pass
     con.close()
 
 group_config=yaml.safe_load(GROUPS.read_text(encoding="utf-8")) if GROUPS.exists() else {"groups":[]}
@@ -58,5 +67,6 @@ group_activity=build_group_activity(pages,events,group_config.get("groups",[]))
 OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
+    "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity
 },ensure_ascii=False,indent=2),encoding="utf-8")

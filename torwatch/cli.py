@@ -6,7 +6,7 @@ from .crawler import fetch
 from .risk import score
 from .storage import (
     get, save, add_event, enqueue_notification, pending_notifications,
-    mark_notification_sent, mark_notification_failed,
+    mark_notification_sent, mark_notification_failed, record_site_check,
 )
 from .notifier import notify
 from .diff import excerpt
@@ -17,6 +17,27 @@ def _level(risk):
     if risk >= 70: return "HIGH"
     if risk >= 50: return "MEDIUM"
     return "LOW"
+
+def _classify_fetch_error(exc):
+    name=type(exc).__name__.lower()
+    message=str(exc).lower()
+    if "timeout" in name or "timed out" in message:
+        return "timeout"
+    if "0x04" in message or "host unreachable" in message:
+        return "onion_unreachable"
+    if "0x05" in message or "connection refused" in message:
+        return "connection_refused"
+    if "0x01" in message or "general socks server failure" in message:
+        return "tor_socks_error"
+    if "http redirect" in message or "redirect chain" in message:
+        return "http_redirect"
+    if "html" in message and ("返しません" in message or "not return" in message):
+        return "non_html_response"
+    if "http" in name:
+        return "http_error"
+    if "connection" in name:
+        return "connection_error"
+    return "fetch_error"
 
 def _reason_text(reasons):
     labels=[]
@@ -93,6 +114,9 @@ def run(demo=False, test_slack=False):
             else:
                 title,text,sha=fetch(url)
 
+            if not demo:
+                record_site_check(url,"ok",title=title)
+
             old=get(url)
             risk,reasons=score(text,keywords,assets)
             state="new" if not old else ("changed" if old[2]!=sha else "unchanged")
@@ -146,7 +170,15 @@ def run(demo=False, test_slack=False):
                 "reasons":reasons,"diff":diff,"slack_queued":bool(should_notify and not demo)
             })
         except Exception as e:
-            results.append({"url":url,"state":"error","risk":0,"reasons":[str(e)]})
+            error_type=_classify_fetch_error(e)
+            if not demo:
+                record_site_check(url,"error",error_type=error_type,error=str(e))
+            results.append({
+                "url":url,"state":"error","risk":None,
+                "risk_level":"NOT_SCANNED","companies":[],
+                "reasons":[f"取得エラー（{error_type}）: {str(e)[:220]}"],
+                "scanned":False,"slack_queued":False
+            })
 
     if not demo:
         run_public_monitor()

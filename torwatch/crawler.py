@@ -5,6 +5,7 @@ external links are deliberately excluded; leaked files are never retrieved.
 """
 import hashlib
 import re
+import time
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -62,14 +63,29 @@ def _page_text(soup):
     return " ".join(soup.get_text(" ", strip=True).split())
 
 
-def fetch(url, timeout=30):
+def _get_with_retry(session, url, timeout, headers):
+    """Retry one transient Tor/network failure; never retry HTTP/content errors."""
+    for attempt in range(2):
+        try:
+            return session.get(
+                url, timeout=timeout, headers=headers, allow_redirects=False
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            if attempt == 1:
+                raise
+            host = urlparse(url).hostname or "unknown host"
+            print(f"TorWatch: retrying {host} once after {type(exc).__name__}")
+            time.sleep(2)
+
+
+def fetch(url, timeout=20):
     session = requests.Session()
     session.proxies.update({
         "http": "socks5h://127.0.0.1:9050",
         "https": "socks5h://127.0.0.1:9050",
     })
     headers = {"User-Agent": USER_AGENT}
-    response = session.get(url, timeout=timeout, headers=headers, allow_redirects=False)
+    response = _get_with_retry(session, url, timeout, headers)
     response.raise_for_status()
     content_type = response.headers.get("Content-Type", "").lower()
     if content_type and "html" not in content_type:

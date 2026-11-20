@@ -114,8 +114,13 @@ def run(demo=False, test_slack=False):
                 # Backfill pre-existing high-risk dashboard findings once.
                 (old is not None and state=="unchanged" and risk>=70)
             )
-            if state in ("new","changed") or risk>=50:
+            # Keep history meaningful: unchanged scans are observations, not new events.
+            # Record content changes and risk reclassifications only.
+            if state in ("new", "changed"):
                 add_event(url,title,state,risk,reasons,diff)
+            elif old is not None and _level(old_risk) != level:
+                add_event(url,title,"reclassified",risk,reasons,
+                          f"Risk level changed: {_level(old_risk)} -> {level}")
             if should_notify and not demo:
                 # Dedupe by page content + risk band, independent of event state.
                 # This sends pre-existing HIGH/CRITICAL findings once after deployment.

@@ -1,5 +1,7 @@
 assets:
+  # 企業ドメイン：セクター別に主要企業・関連会社を追加
   domains:
+    # 既存監視先
     - toyota.com
     - sony.com
     - ntt.com
@@ -19,29 +21,377 @@ assets:
     - sbisec.co.jp
     - mizuho-sc.com
 
+    # 通信・IT・インターネット
+    - kddi.com
+    - softbank.jp
+    - lycorp.co.jp
+    - rakuten.co.jp
+    - fujitsu.com
+    - nec.com
+    - mitsuielectric.com
+    - panasonic.com
+    - keyence.com
+    - murata.com
+    - tokyoelectron.com
+    - renesas.com
+    - canon.com
+    - nri.com
+    - trendmicro.com
+    - mercari.com
+    - zozo.com
+
+    # 銀行・証券・金融
+    - smfg.co.jp
+    - mizuhogroup.com
+    - resona-gr.co.jp
+    - nomuraholdings.com
+    - daiwa-grp.jp
+    - monexgroup.jp
+    - orix.co.jp
+    - jpx.co.jp
+    - chibabank.co.jp
+    - sbigroup.co.jp
+    - sonyfg.co.jp
+    - sonybank.net
+    - bk.mufg.jp
+    - jp-bank.japanpost.jp
+
+    # 保険
+    - sompo-hd.com
+    - ms-ad-hd.com
+    - dai-ichi-life-hd.com
+    - nissay.co.jp
+    - sumitomolife.co.jp
+    - jp-life.japanpost.jp
+
+    # 商社
+    - mitsui.com
+    - marubeni.com
+    - sumitomocorp.com
+    - toyota-tsusho.com
+    - sojitz.com
+
+    # 自動車・輸送機器・部品
+    - honda.co.jp
+    - nissan-global.com
+    - suzuki.co.jp
+    - subaru.co.jp
+    - mazda.com
+    - isuzu.co.jp
+    - densol.com
+    - aisin.com
+
+    # 機械・電機・素材・化学
+    - komatsu.jp
+    - daikin.com
+    - kubota.com
+    - fanuc.co.jp
+    - yaskawa.co.jp
+    - fujifilm.com
+    - shinetsu.co.jp
+    - toray.com
+    - bridgestone.com
+    - jfe-holdings.co.jp
+    - kobelco.co.jp
+    - agc.com
+    - asahikasei.com
+    - kao.com
+    - sumitomo-chem.co.jp
+
+    # 医薬品・医療機器
+    - takeda.com
+    - astellas.com
+    - daiichisankyo.com
+    - chugai-pharm.co.jp
+    - shionogi.com
+    - terumo.com
+    - olympus-global.com
+    - otsuka.com
+
+    # 小売・消費財・食品・サービス
+    - aeon.info
+    - 7andi.com
+    - fastretailing.com
+    - ryohin-keikaku.jp
+    - nitori.co.jp
+    - panpacificinternational.com
+    - recruit-holdings.com
+    - asahigroup-holdings.com
+    - kirinholdings.com
+    - ajinomoto.com
+    - meiji.com
+    - nissui.co.jp
+
+    # 交通・物流・エネルギー・社会インフラ
+    - tepco.co.jp
+    - kepco.co.jp
+    - chuden.co.jp
+    - tokyo-gas.co.jp
+    - osakagas.co.jp
+    - jr-east.co.jp
+    - jr-central.co.jp
+    - yamato-hd.co.jp
+    - nipponexpress-holdings.com
+    - ana.co.jp
+    - jal.com
+    - eneos.co.jp
+    - idemitsu.com
+
   emails: []
 
+  # 組織名は日本語・英語の表記ゆれを含む。短い略称は誤検知防止のため原則登録しない。
   names:
+    # 既存監視先
     - Toyota Motor Corporation
+    - トヨタ自動車
     - Sony Group Corporation
+    - ソニーグループ
     - NTT Corporation
+    - NTT, Inc.
+    - 日本電信電話
     - Hitachi, Ltd.
+    - 株式会社日立製作所
     - Mitsubishi UFJ Financial Group
+    - 三菱UFJフィナンシャル・グループ
     - Mitsubishi Corporation
+    - 三菱商事
     - ITOCHU Corporation
+    - 伊藤忠商事
     - Sekisui House
+    - 積水ハウス
     - DTS Corporation
+    - 株式会社DTS
     - INPEX Corporation
+    - 株式会社INPEX
     - Nippon Steel Corporation
+    - 日本製鉄
     - Tokio Marine Holdings
+    - 東京海上ホールディングス
     - Mitsubishi Heavy Industries
+    - 三菱重工業
     - NTT DATA Group
+    - NTTデータグループ
     - Mitsubishi HC Capital
+    - 三菱HCキャピタル
     - 楽天証券株式会社
     - Rakuten Securities, Inc.
     - 株式会社SBI証券
     - SBI SECURITIES Co., Ltd.
     - みずほ証券株式会社
     - Mizuho Securities Co., Ltd.
+
+    # 通信・IT・インターネット
+    - KDDI株式会社
+    - KDDI Corporation
+    - ソフトバンク株式会社
+    - SoftBank Corp.
+    - LINEヤフー株式会社
+    - LY Corporation
+    - 楽天グループ株式会社
+    - Rakuten Group, Inc.
+    - 富士通株式会社
+    - Fujitsu Limited
+    - 日本電気株式会社
+    - NEC Corporation
+    - 三菱電機株式会社
+    - Mitsubishi Electric Corporation
+    - パナソニック ホールディングス株式会社
+    - Panasonic Holdings Corporation
+    - キーエンス
+    - KEYENCE CORPORATION
+    - 株式会社村田製作所
+    - Murata Manufacturing Co., Ltd.
+    - 東京エレクトロン株式会社
+    - Tokyo Electron Limited
+    - ルネサス エレクトロニクス株式会社
+    - Renesas Electronics Corporation
+    - キヤノン株式会社
+    - Canon Inc.
+    - 野村総合研究所
+    - Nomura Research Institute
+    - トレンドマイクロ株式会社
+    - Trend Micro Incorporated
+    - 株式会社メルカリ
+    - Mercari, Inc.
+    - 株式会社ZOZO
+    - ZOZO, Inc.
+
+    # 銀行・証券・金融
+    - 三井住友フィナンシャルグループ
+    - Sumitomo Mitsui Financial Group
+    - みずほフィナンシャルグループ
+    - Mizuho Financial Group
+    - りそなホールディングス
+    - Resona Holdings
+    - 野村ホールディングス
+    - Nomura Holdings
+    - 大和証券グループ本社
+    - Daiwa Securities Group
+    - マネックスグループ
+    - Monex Group
+    - オリックス株式会社
+    - ORIX Corporation
+    - 日本取引所グループ
+    - Japan Exchange Group
+    - 千葉銀行
+    - The Chiba Bank
+    - SBIホールディングス
+    - SBI Holdings
+    - ソニーフィナンシャルグループ
+    - Sony Financial Group
+    - ソニー銀行
+    - Sony Bank
+    - 三菱UFJ銀行
+    - MUFG Bank
+    - ゆうちょ銀行
+    - Japan Post Bank
+
+    # 保険
+    - SOMPOホールディングス
+    - Sompo Holdings
+    - MS&ADインシュアランスグループ
+    - MS&AD Insurance Group Holdings
+    - 第一生命ホールディングス
+    - Dai-ichi Life Holdings
+    - 日本生命保険
+    - Nippon Life Insurance
+    - 住友生命保険
+    - Sumitomo Life Insurance
+    - かんぽ生命保険
+    - Japan Post Insurance
+
+    # 商社
+    - 三井物産株式会社
+    - Mitsui & Co.
+    - 丸紅株式会社
+    - Marubeni Corporation
+    - 住友商事株式会社
+    - Sumitomo Corporation
+    - 豊田通商株式会社
+    - Toyota Tsusho Corporation
+    - 双日株式会社
+    - Sojitz Corporation
+
+    # 自動車・輸送機器・部品
+    - 本田技研工業株式会社
+    - Honda Motor Co., Ltd.
+    - 日産自動車株式会社
+    - Nissan Motor Co., Ltd.
+    - スズキ株式会社
+    - Suzuki Motor Corporation
+    - 株式会社SUBARU
+    - Subaru Corporation
+    - マツダ株式会社
+    - Mazda Motor Corporation
+    - いすゞ自動車株式会社
+    - Isuzu Motors Limited
+    - 株式会社デンソー
+    - DENSO CORPORATION
+    - アイシン株式会社
+    - AISIN CORPORATION
+
+    # 機械・電機・素材・化学
+    - コマツ
+    - Komatsu Ltd.
+    - ダイキン工業株式会社
+    - Daikin Industries
+    - 株式会社クボタ
+    - Kubota Corporation
+    - ファナック株式会社
+    - FANUC CORPORATION
+    - 株式会社安川電機
+    - Yaskawa Electric Corporation
+    - 富士フイルムホールディングス
+    - FUJIFILM Holdings Corporation
+    - 信越化学工業株式会社
+    - Shin-Etsu Chemical Co., Ltd.
+    - 東レ株式会社
+    - Toray Industries, Inc.
+    - 株式会社ブリヂストン
+    - Bridgestone Corporation
+    - JFEホールディングス
+    - JFE Holdings, Inc.
+    - 株式会社神戸製鋼所
+    - Kobe Steel, Ltd.
+    - AGC株式会社
+    - AGC Inc.
+    - 旭化成株式会社
+    - Asahi Kasei Corporation
+    - 花王株式会社
+    - Kao Corporation
+    - 住友化学株式会社
+    - Sumitomo Chemical Company
+
+    # 医薬品・医療機器
+    - 武田薬品工業株式会社
+    - Takeda Pharmaceutical Company
+    - アステラス製薬株式会社
+    - Astellas Pharma Inc.
+    - 第一三共株式会社
+    - Daiichi Sankyo Company
+    - 中外製薬株式会社
+    - Chugai Pharmaceutical
+    - 塩野義製薬株式会社
+    - Shionogi & Co., Ltd.
+    - テルモ株式会社
+    - Terumo Corporation
+    - オリンパス株式会社
+    - Olympus Corporation
+    - 大塚ホールディングス
+    - Otsuka Holdings
+
+    # 小売・消費財・食品・サービス
+    - イオン株式会社
+    - AEON Co., Ltd.
+    - セブン＆アイ・ホールディングス
+    - Seven & i Holdings
+    - ファーストリテイリング
+    - FAST RETAILING CO., LTD.
+    - 株式会社良品計画
+    - Ryohin Keikaku Co., Ltd.
+    - 株式会社ニトリホールディングス
+    - Nitori Holdings
+    - パン・パシフィック・インターナショナルホールディングス
+    - Pan Pacific International Holdings
+    - 株式会社リクルートホールディングス
+    - Recruit Holdings
+    - アサヒグループホールディングス
+    - Asahi Group Holdings
+    - キリンホールディングス
+    - Kirin Holdings
+    - 味の素株式会社
+    - Ajinomoto Co., Inc.
+    - 明治ホールディングス
+    - Meiji Holdings
+    - 株式会社ニッスイ
+    - Nissui Corporation
+
+    # 交通・物流・エネルギー・社会インフラ
+    - 東京電力ホールディングス
+    - Tokyo Electric Power Company Holdings
+    - 関西電力株式会社
+    - The Kansai Electric Power Company
+    - 中部電力株式会社
+    - Chubu Electric Power
+    - 東京ガス株式会社
+    - Tokyo Gas Co., Ltd.
+    - 大阪ガス株式会社
+    - Osaka Gas Co., Ltd.
+    - 東日本旅客鉄道株式会社
+    - East Japan Railway Company
+    - 東海旅客鉄道株式会社
+    - Central Japan Railway Company
+    - ヤマトホールディングス株式会社
+    - Yamato Holdings
+    - NIPPON EXPRESSホールディングス
+    - NIPPON EXPRESS HOLDINGS
+    - ANAホールディングス株式会社
+    - ANA Holdings
+    - 日本航空株式会社
+    - Japan Airlines
+    - ENEOSホールディングス
+    - ENEOS Holdings
+    - 出光興産株式会社
+    - Idemitsu Kosan
 
   services: []

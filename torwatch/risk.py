@@ -13,9 +13,9 @@ BREACH_TERMS = (
 )
 CLAIM_TERMS = ("data size", "downloaded data", "data volume", "stolen data size")
 DATA_TERMS = (
-    "database", "customer", "client", "employee", "personal data",
-    "credit card", "password", "credential", "api key", "secret",
-    "顧客", "従業員", "個人情報", "クレジットカード", "データベース",
+    "database", "customer data", "client data", "employee data", "personal data",
+    "credit card", "password", "credentials", "api key", "secret",
+    "顧客情報", "従業員情報", "個人情報", "クレジットカード", "データベース",
 )
 
 def _occurrences(text, value):
@@ -66,6 +66,8 @@ def score(text, keywords, assets):
             score_value = 90
         elif breach and sensitive:
             score_value = 75
+        elif claims and breach:
+            score_value = 70
         elif claims:
             score_value = 55
         elif breach or len(set(sensitive)) >= 2:
@@ -90,7 +92,9 @@ def score(text, keywords, assets):
         if strongest >= 90:
             reasons.append("basis:企業名の近くに漏洩関連語と複数の機微情報種別を検出")
         elif strongest >= 75:
-            reasons.append("basis:企業名の近くに漏洩関連語と情報種別を検出")
+            reasons.append("basis:企業名の近くに漏洩関連語と機微情報種別を検出")
+        elif strongest >= 70:
+            reasons.append("basis:企業名の近くに漏洩関連語とデータ量表示を検出。流出の真偽は未確認")
         elif strongest >= 55:
             reasons.append("basis:企業名の近くにデータ量などの掲載情報、漏洩関連語または複数の情報種別を検出。流出の真偽は未確認")
         elif strongest >= 35:

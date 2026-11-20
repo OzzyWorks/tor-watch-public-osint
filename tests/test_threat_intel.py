@@ -11,6 +11,17 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertIn("sbisec.co.jp",_matches("Notice for sbisec.co.jp",assets))
         self.assertIn("SBI SECURITIES Co., Ltd.",_matches("SBI SECURITIES Co., Ltd. incident",assets))
 
+
+    def test_rss_risk_requires_incident_terms_near_company(self):
+        unrelated = "Sony Group Corporation " + ("ordinary corporate profile " * 80) + " unrelated ransomware report"
+        risk, reasons = _risk_near_matches(unrelated, ["Sony Group Corporation"])
+        self.assertEqual(risk, 0)
+
+        relevant = "Sony Group Corporation " + ("company update " * 12) + " ransomware data breach exposed customer data"
+        risk, reasons = _risk_near_matches(relevant, ["Sony Group Corporation"])
+        self.assertEqual(risk, 75)
+        self.assertIn("company_context:Sony Group Corporation", reasons)
+
     def test_risk_requires_incident_language(self):
         score,_=_risk("Oracle software vulnerability advisory")
         self.assertEqual(score,0)

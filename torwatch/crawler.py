@@ -1,10 +1,108 @@
-import hashlib,requests
+"""Fetch public ransomware leak-site HTML for defensive OSINT.
+
+Only same-host HTML pages are followed. Download/archive/document links and
+external links are deliberately excluded; leaked files are never retrieved.
+"""
+import hashlib
+import re
+from urllib.parse import urljoin, urlparse
+
+import requests
 from bs4 import BeautifulSoup
-def fetch(url,timeout=30):
-    s=requests.Session(); s.proxies.update({"http":"socks5h://127.0.0.1:9050","https":"socks5h://127.0.0.1:9050"})
-    r=s.get(url,timeout=timeout,headers={"User-Agent":"TorWatch-Public-OSINT/0.3"}); r.raise_for_status()
-    soup=BeautifulSoup(r.text,"html.parser")
-    for x in soup(["script","style","noscript"]): x.decompose()
-    title=soup.title.get_text(" ",strip=True) if soup.title else ""
-    text=" ".join(soup.get_text(" ",strip=True).split())
-    return title,text,hashlib.sha256(text.encode()).hexdigest()
+
+USER_AGENT = "TorWatch-Public-OSINT/0.5"
+MAX_DETAIL_PAGES = 8
+MAX_HTML_BYTES = 1_000_000
+BLOCKED_EXTENSIONS = (
+    ".zip", ".rar", ".7z", ".tar", ".gz", ".tgz", ".sql", ".db",
+    ".dump", ".bak", ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+    ".csv", ".txt", ".json", ".exe", ".dll", ".iso", ".img",
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".mp3",
+)
+BLOCKED_PATH_PARTS = (
+    "/logout", "/login", "/register", "/download", "/file/",
+    "/files/", "/attachment", "/uploads/",
+)
+
+
+def _candidate_links(base_url, soup, limit=MAX_DETAIL_PAGES):
+    """Return unique same-host HTML-like links, never file downloads."""
+    base = urlparse(base_url)
+    found = []
+    seen = {base_url}
+    for anchor in soup.find_all("a", href=True):
+        href = (anchor.get("href") or "").strip()
+        if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
+            continue
+        target = urljoin(base_url, href)
+        parsed = urlparse(target)
+        if parsed.scheme not in ("http", "https") or parsed.hostname != base.hostname:
+            continue
+        clean = parsed._replace(fragment="").geturl()
+        if clean in seen:
+            continue
+        path = parsed.path.lower()
+        if path.endswith(BLOCKED_EXTENSIONS):
+            continue
+        if any(part in path for part in BLOCKED_PATH_PARTS):
+            continue
+        if clean.rstrip("/") == base_url.rstrip("/"):
+            continue
+        seen.add(clean)
+        label = " ".join(anchor.get_text(" ", strip=True).split())
+        found.append((clean, label))
+        if len(found) >= limit:
+            break
+    return found
+
+
+def _page_text(soup):
+    for node in soup(["script", "style", "noscript", "svg"]):
+        node.decompose()
+    return " ".join(soup.get_text(" ", strip=True).split())
+
+
+def fetch(url, timeout=30):
+    session = requests.Session()
+    session.proxies.update({
+        "http": "socks5h://127.0.0.1:9050",
+        "https": "socks5h://127.0.0.1:9050",
+    })
+    headers = {"User-Agent": USER_AGENT}
+    response = session.get(url, timeout=timeout, headers=headers, allow_redirects=False)
+    response.raise_for_status()
+    content_type = response.headers.get("Content-Type", "").lower()
+    if content_type and "html" not in content_type:
+        raise ValueError("監視対象URLがHTMLを返しません")
+    if len(response.content) > MAX_HTML_BYTES:
+        raise ValueError("トップページが1MBを超えたため取得を中止")
+    soup = BeautifulSoup(response.text, "html.parser")
+    title = soup.title.get_text(" ", strip=True) if soup.title else ""
+    chunks = [_page_text(soup)]
+
+    # Inspect a small number of same-host post/detail pages. Never follow
+    # external links or links that look like downloadable files.
+    for detail_url, label in _candidate_links(url, soup):
+        try:
+            detail = session.get(
+                detail_url, timeout=(5, 8), headers=headers, allow_redirects=False
+            )
+            if detail.status_code != 200:
+                continue
+            detail_type = detail.headers.get("Content-Type", "").lower()
+            if detail_type and "html" not in detail_type:
+                continue
+            if len(detail.content) > MAX_HTML_BYTES:
+                continue
+            detail_soup = BeautifulSoup(detail.text, "html.parser")
+            detail_title = detail_soup.title.get_text(" ", strip=True) if detail_soup.title else ""
+            detail_body = _page_text(detail_soup)
+            if label or detail_title or detail_body:
+                chunks.append(" ".join(x for x in (label, detail_title, detail_body) if x))
+        except requests.RequestException:
+            # A single stale post must not prevent the landing page being scanned.
+            continue
+
+    text = " ".join(x for x in chunks if x)
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return title, text, digest

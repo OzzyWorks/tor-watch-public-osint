@@ -11,6 +11,7 @@ BREACH_TERMS = (
     "data leak", "stolen", "extortion", "情報漏えい", "情報漏洩",
     "情報流出", "データ流出", "窃取", "ランサムウェア",
 )
+CLAIM_TERMS = ("data size", "downloaded data", "data volume", "stolen data size")
 DATA_TERMS = (
     "database", "customer", "client", "employee", "personal data",
     "credit card", "password", "credential", "api key", "secret",
@@ -47,22 +48,26 @@ def score(text, keywords, assets):
             if label not in companies:
                 companies.append(label)
             for pos in positions:
-                context = source[max(0, pos - 220): min(len(source), pos + len(value) + 220)]
+                context = source[max(0, pos - 650): min(len(source), pos + len(value) + 650)]
                 breach = _terms_in(context, BREACH_TERMS)
+                claims = _terms_in(context, CLAIM_TERMS)
                 sensitive = _terms_in(context, DATA_TERMS)
-                evidence_by_company.append((label, breach, sensitive))
+                evidence_by_company.append((label, breach, claims, sensitive))
 
     reasons = ["company:" + name for name in companies]
     strongest = 0
     best_breach = []
+    best_claims = []
     best_sensitive = []
 
-    for company, breach, sensitive in evidence_by_company:
+    for company, breach, claims, sensitive in evidence_by_company:
         # Score each company independently; don't combine unrelated page sections.
         if breach and len(set(sensitive)) >= 2:
             score_value = 90
         elif breach and sensitive:
             score_value = 75
+        elif claims:
+            score_value = 55
         elif breach or len(set(sensitive)) >= 2:
             score_value = 55
         elif sensitive:
@@ -72,11 +77,14 @@ def score(text, keywords, assets):
         if score_value > strongest:
             strongest = score_value
             best_breach = breach
+            best_claims = claims
             best_sensitive = sensitive
 
     if companies:
         if best_breach:
             reasons.append("nearby_breach:" + ", ".join(best_breach))
+        if best_claims:
+            reasons.append("nearby_claim:" + ", ".join(best_claims))
         if best_sensitive:
             reasons.append("nearby_data:" + ", ".join(best_sensitive))
         if strongest >= 90:
@@ -84,7 +92,7 @@ def score(text, keywords, assets):
         elif strongest >= 75:
             reasons.append("basis:企業名の近くに漏洩関連語と情報種別を検出")
         elif strongest >= 55:
-            reasons.append("basis:企業名の近くに漏洩関連語または複数の情報種別を検出")
+            reasons.append("basis:企業名の近くにデータ量などの掲載情報、漏洩関連語または複数の情報種別を検出。流出の真偽は未確認")
         elif strongest >= 35:
             reasons.append("basis:企業名の近くに情報種別を検出。漏洩主張は未確認")
         else:

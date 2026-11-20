@@ -47,7 +47,7 @@ jobs:
             sleep 2
           done
           for i in $(seq 1 60); do
-            if curl --silent --show-error --max-time 8 --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip | grep -q '"IsTor":true'; then
+            if curl --silent --show-error --max-time 8 --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip | grep -q '\"IsTor\":true'; then
               echo "Tor bootstrap and external connectivity verified"
               exit 0
             fi
@@ -81,4 +81,5 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
+      # A fresh workflow run avoids duplicate github-pages artifacts left by job retries.
       - uses: actions/deploy-pages@v4

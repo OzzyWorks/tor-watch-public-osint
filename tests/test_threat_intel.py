@@ -25,6 +25,12 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertIn("company:Sekisui House",reasons)
         self.assertTrue(any(x.startswith("nearby_breach:") for x in reasons))
 
+    def test_company_listing_with_data_size_is_medium(self):
+        page = "Sekisui House " + ("company profile and business overview " * 8) + "1 TB Data size JP Country"
+        risk, reasons = score(page, [], {"names": ["Sekisui House"]})
+        self.assertEqual(risk, 55)
+        self.assertTrue(any(x.startswith("nearby_claim:data size") for x in reasons))
+
     def test_company_name_alone_is_not_high(self):
         risk,reasons=score("Sekisui House announced a new office.",[],{"names":["Sekisui House"]})
         self.assertLess(risk,70)

@@ -82,6 +82,32 @@ def _risk(text):
         return 55,["incident_term:"+x for x in medium[:3]]
     return 0,[]
 
+def _risk_near_matches(text, matches, radius=1200):
+    """Score incident language only when it appears near a matched organisation."""
+    folded = str(text or "").casefold()
+    best_risk = 0
+    best_reasons = []
+    best_match = ""
+    for match in matches or []:
+        needle = str(match).casefold()
+        if not needle:
+            continue
+        start = 0
+        while True:
+            pos = folded.find(needle, start)
+            if pos < 0:
+                break
+            context = folded[max(0, pos - radius):min(len(folded), pos + len(needle) + radius)]
+            risk, reasons = _risk(context)
+            if risk > best_risk:
+                best_risk = risk
+                best_reasons = reasons
+                best_match = str(match)
+            start = pos + max(1, len(needle))
+    if best_risk:
+        return best_risk, ["company_context:" + best_match] + best_reasons
+    return 0, ["basis:企業名と近接するインシデント根拠なし"]
+
 def run_public_monitor():
     config_path=CONFIG/"sources.yml"
     if not config_path.exists():
@@ -116,7 +142,7 @@ def run_public_monitor():
                 matches=_matches(body,assets)
                 if not matches:
                     continue
-                risk,reasons=_risk(body)
+                risk,reasons=_risk_near_matches(body,matches)
                 if risk<45:
                     continue
                 url=entry["url"] or feed_url

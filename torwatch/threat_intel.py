@@ -12,6 +12,7 @@ import yaml
 from bs4 import BeautifulSoup
 
 from .config import CONFIG, load_assets
+from .risk import canonical_company_key
 from .storage import add_threat_item, list_threat_items, enqueue_notification
 
 UA = "TorWatch-Public-OSINT/0.4 (+public defensive monitoring)"
@@ -56,6 +57,7 @@ def _parse_feed(payload):
 
 def _matches(text, assets):
     found=[]
+    seen_name_keys=set()
     for category in ("names","domains","emails","services"):
         for raw in (assets or {}).get(category,[]) or []:
             value=str(raw).strip()
@@ -68,8 +70,14 @@ def _matches(text, assets):
                 hit=re.search(r"(?<![A-Za-z0-9])"+re.escape(value.lower())+r"(?![A-Za-z0-9])",text.lower()) is not None
             else:
                 hit=value.casefold() in text.casefold()
-            if hit and value not in found:
-                found.append(value)
+            if hit:
+                if category=="names":
+                    key=canonical_company_key(value)
+                    if key not in seen_name_keys:
+                        found.append(value)
+                        seen_name_keys.add(key)
+                elif value not in found:
+                    found.append(value)
     return found
 
 def _risk(text):

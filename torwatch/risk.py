@@ -18,6 +18,18 @@ DATA_TERMS = (
     "顧客情報", "従業員情報", "個人情報", "クレジットカード", "データベース",
 )
 
+def canonical_company_key(value):
+    """Collapse English legal-form suffixes so aliases map to one organisation."""
+    raw=str(value or "").strip().casefold()
+    if not re.fullmatch(r"[a-z0-9 .,&'()_-]+",raw):
+        return raw
+    tokens=re.findall(r"[a-z0-9]+",raw)
+    legal_suffixes={"inc","incorporated","corp","corporation","co","company","ltd","limited"}
+    while tokens and tokens[-1] in legal_suffixes:
+        tokens.pop()
+    return " ".join(tokens)
+
+
 def _occurrences(text, value):
     pattern = re.escape(str(value).strip())
     if re.fullmatch(r"[A-Za-z0-9 .,&'()_-]+", str(value).strip()):
@@ -34,6 +46,7 @@ def score(text, keywords, assets):
     companies = []
     evidence_by_company = []
     all_assets = assets or {}
+    name_labels = {}
 
     # Match registered names and domains, then inspect only the nearby context.
     for category in ("names", "domains", "emails", "services"):
@@ -45,6 +58,9 @@ def score(text, keywords, assets):
             if not positions:
                 continue
             label = value
+            if category == "names":
+                key = canonical_company_key(value)
+                label = name_labels.setdefault(key, value)
             if label not in companies:
                 companies.append(label)
             for pos in positions:

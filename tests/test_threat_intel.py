@@ -12,6 +12,20 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertIn("SBI SECURITIES Co., Ltd.",_matches("SBI SECURITIES Co., Ltd. incident",assets))
 
 
+    def test_english_legal_suffix_aliases_are_deduplicated(self):
+        assets={"names":[
+            "Sekisui House","SEKISUI HOUSE, LTD.",
+            "Nippon Steel Corporation","NIPPON STEEL CORP.",
+        ]}
+        text="Sekisui House SEKISUI HOUSE, LTD. Nippon Steel Corporation NIPPON STEEL CORP. ransomware leak data size"
+        matches=_matches(text,assets)
+        self.assertEqual(matches,["Sekisui House","Nippon Steel Corporation"])
+        _,reasons=score(text,[],assets)
+        companies=[x for x in reasons if x.startswith("company:")]
+        self.assertEqual(companies,[
+            "company:Sekisui House","company:Nippon Steel Corporation"
+        ])
+
     def test_rss_risk_requires_incident_terms_near_company(self):
         unrelated = "Sony Group Corporation " + ("ordinary corporate profile " * 80) + " unrelated ransomware report"
         risk, reasons = _risk_near_matches(unrelated, ["Sony Group Corporation"])

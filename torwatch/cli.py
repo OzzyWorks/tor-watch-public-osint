@@ -117,8 +117,12 @@ def run(demo=False, test_slack=False):
             if should_notify and not demo:
                 # Dedupe by page content + risk band, independent of event state.
                 # This sends pre-existing HIGH/CRITICAL findings once after deployment.
+                matched_companies=sorted(
+                    r.split(":",1)[1] for r in reasons if r.startswith("company:")
+                )
+                # Identical mirrors with identical content share one notification.
                 event_key=hashlib.sha256(
-                    f"{url}|{sha}|{level}".encode("utf-8")
+                    f"{sha}|{level}|{'|'.join(matched_companies)}".encode("utf-8")
                 ).hexdigest()
                 queued=enqueue_notification(event_key,_alert_message(url,title,state,risk,reasons))
                 if queued:

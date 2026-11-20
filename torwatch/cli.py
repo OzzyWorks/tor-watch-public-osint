@@ -3,7 +3,7 @@ import hashlib
 import json
 from .config import load_lines, load_assets
 from .crawler import fetch
-from .risk import score
+from .risk import canonical_company_key, score
 from .storage import (
     get, save, add_event, enqueue_notification, pending_notifications,
     mark_notification_sent, mark_notification_failed, record_site_check,
@@ -38,6 +38,27 @@ def _classify_fetch_error(exc):
     if "connection" in name:
         return "connection_error"
     return "fetch_error"
+
+def _has_relevant_change(old,risk,reasons):
+    """Ignore homepage churn unless a watched company is newly implicated or risk rises.
+
+    Leak-site homepages can contain many historical victim cards. A new unrelated
+    card must not trigger an alert for companies already listed elsewhere.
+    """
+    if old is None:
+        return True
+    old_risk=int(old[4] or 0)
+    old_companies={
+        canonical_company_key(part.split(":",1)[1])
+        for part in str(old[5] or "").split(" | ")
+        if part.startswith("company:")
+    }
+    new_companies={
+        canonical_company_key(reason.split(":",1)[1])
+        for reason in reasons or []
+        if reason.startswith("company:")
+    }
+    return risk>old_risk or bool(new_companies-old_companies)
 
 def _reason_text(reasons):
     labels=[]
@@ -121,6 +142,7 @@ def run(demo=False, test_slack=False):
             risk,reasons=score(text,keywords,assets)
             state="new" if not old else ("changed" if old[2]!=sha else "unchanged")
             old_risk=old[4] if old else 0
+            relevant_change=_has_relevant_change(old,risk,reasons)
             diff=excerpt(old[3],text) if old and state=="changed" else ""
             level=_level(risk)
             previous_level=_level(old_risk) if old else "NONE"
@@ -131,20 +153,24 @@ def run(demo=False, test_slack=False):
             should_notify=(
                 risk_revised or
                 (old is None and risk>=50) or
-                (state=="changed" and risk>=70) or
-                (old is not None and old_risk<70 and risk>=70) or
-                # Notify once when a previously low-risk company listing gains a data-volume claim.
-                (old is not None and old_risk<55 and risk>=55) or
-                # Backfill pre-existing high-risk dashboard findings once.
-                (old is not None and state=="unchanged" and risk>=70)
+                (state=="changed" and relevant_change and risk>=70) or
+                (old is not None and old_risk<70 and risk>=70 and relevant_change) or
+                # Notify when a previously low-risk page gains a watched company or risk evidence.
+                (old is not None and old_risk<55 and risk>=55 and relevant_change) or
+                # Backfill only when the current scan adds a watched company or raises risk.
+                (old is not None and state=="unchanged" and risk>=70 and relevant_change)
             )
             # Keep history meaningful: unchanged scans are observations, not new events.
             # Record content changes and risk reclassifications only.
-            if state in ("new", "changed"):
+            if state=="new":
+                add_event(url,title,state,risk,reasons,diff)
+            elif state=="changed" and relevant_change:
                 add_event(url,title,state,risk,reasons,diff)
             elif old is not None and _level(old_risk) != level:
                 add_event(url,title,"reclassified",risk,reasons,
                           f"Risk level changed: {_level(old_risk)} -> {level}")
+            elif state=="changed":
+                print("TorWatch: page changed without a new watched-company match or risk increase; event suppressed")
             if should_notify and not demo:
                 # Dedupe by page content + risk band, independent of event state.
                 # This sends pre-existing HIGH/CRITICAL findings once after deployment.

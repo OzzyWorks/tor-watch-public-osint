@@ -50,9 +50,14 @@ def record_site_check(url,status,title="",error_type="",error=""):
         error_type=""
         error=""
     else:
-        last_success_at=previous[0] if previous else None
+        # Backfill the first health record from the last successful page scan
+        # created before the site_checks table existed.
+        prior_page=con.execute("SELECT checked_at,title FROM pages WHERE url=?",(url,)).fetchone()
+        last_success_at=(previous[0] if previous and previous[0] else
+                         (prior_page[0] if prior_page else None))
         consecutive_errors=(int(previous[1] or 0)+1) if previous else 1
-    stored_title=title or (previous[2] if previous else "")
+    prior_page=con.execute("SELECT checked_at,title FROM pages WHERE url=?",(url,)).fetchone()
+    stored_title=title or (previous[2] if previous else "") or (prior_page[1] if prior_page else "")
     con.execute("""INSERT INTO site_checks
         (url,status,title,error_type,error,checked_at,last_success_at,consecutive_errors)
         VALUES(?,?,?,?,?,?,?,?)

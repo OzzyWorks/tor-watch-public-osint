@@ -4,6 +4,7 @@ from pathlib import Path
 
 from torwatch import storage
 from torwatch.cli import _classify_fetch_error
+from torwatch.crawler import _safe_redirect_target
 
 
 class SiteHealthTests(unittest.TestCase):
@@ -29,6 +30,31 @@ class SiteHealthTests(unittest.TestCase):
             _classify_fetch_error(ValueError("監視対象URLがHTMLを返しません")),
             "non_html_response",
         )
+
+    def test_legacy_page_history_backfills_first_failed_health_record(self):
+        url = "http://legacyonion.onion/"
+        storage.save(url, "Legacy page", "sha", "body", 0, [])
+        last_success = storage.get(url)[6]
+        storage.record_site_check(
+            url, "error", error_type="timeout", error="connection timed out"
+        )
+        item = storage.list_site_checks()[0]
+        self.assertEqual(item["last_success_at"], last_success)
+        self.assertEqual(item["title"], "Legacy page")
+
+    def test_redirect_target_stays_on_same_host_and_html_only(self):
+        base = "http://exampleonion.onion/"
+        self.assertEqual(
+            _safe_redirect_target(base, "/news"),
+            "http://exampleonion.onion/news",
+        )
+        self.assertIsNone(
+            _safe_redirect_target(base, "https://evil.example/news")
+        )
+        self.assertIsNone(
+            _safe_redirect_target(base, "/download/leak.zip")
+        )
+        self.assertIsNone(_safe_redirect_target(base, "/login"))
 
     def test_site_health_keeps_failures_separate_and_resets_on_success(self):
         url = "http://exampleonion.onion/"

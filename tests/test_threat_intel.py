@@ -1,5 +1,5 @@
 import unittest
-from torwatch.threat_intel import _matches, _parse_feed, _risk
+from torwatch.threat_intel import _matches, _parse_feed, _risk, _risk_near_matches
 from torwatch.risk import score
 from torwatch.crawler import _candidate_links
 from bs4 import BeautifulSoup

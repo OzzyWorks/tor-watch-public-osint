@@ -1,6 +1,8 @@
 import unittest
 from torwatch.threat_intel import _matches, _parse_feed, _risk
 from torwatch.risk import score
+from torwatch.crawler import _candidate_links
+from bs4 import BeautifulSoup
 
 class ThreatIntelTests(unittest.TestCase):
     def test_company_name_match_japanese_and_english(self):
@@ -31,6 +33,21 @@ class ThreatIntelTests(unittest.TestCase):
     def test_unrelated_keywords_cannot_make_company_critical(self):
         risk,_=score("database leak customer employee credit card",[],{"names":["Sekisui House"]})
         self.assertLess(risk,70)
+
+    def test_detail_crawler_only_follows_same_host_html_links(self):
+        html = """<html><body>
+        <a href="/post/123">Victim announcement</a>
+        <a href="https://evil.example/post/2">external</a>
+        <a href="/download/customer-dump.zip">archive</a>
+        <a href="/files/database.sql">database</a>
+        <a href="/login">login</a>
+        <a href="#top">anchor</a>
+        </body></html>"""
+        soup = BeautifulSoup(html, "html.parser")
+        links = _candidate_links("http://exampleonion.onion/", soup)
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0][0], "http://exampleonion.onion/post/123")
+        self.assertEqual(links[0][1], "Victim announcement")
 
     def test_parse_rss(self):
         xml=b'''<?xml version="1.0"?><rss version="2.0"><channel><item>

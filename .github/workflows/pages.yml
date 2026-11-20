@@ -81,5 +81,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
-      # A fresh workflow run avoids duplicate github-pages artifacts left by job retries.
+      # GitHub's artifact listing can lag behind a successful upload; wait before deploy-pages queries it.
+      - name: Wait for Pages artifact metadata
+        run: sleep 15
       - uses: actions/deploy-pages@v4

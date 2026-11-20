@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 USER_AGENT = "TorWatch-Public-OSINT/0.5"
-MAX_DETAIL_PAGES = 8
+MAX_DETAIL_PAGES = 5
 MAX_HTML_BYTES = 1_000_000
 BLOCKED_EXTENSIONS = (
     ".zip", ".rar", ".7z", ".tar", ".gz", ".tgz", ".sql", ".db",
@@ -85,7 +85,7 @@ def fetch(url, timeout=30):
     for detail_url, label in _candidate_links(url, soup):
         try:
             detail = session.get(
-                detail_url, timeout=(5, 8), headers=headers, allow_redirects=False
+                detail_url, timeout=(3, 5), headers=headers, allow_redirects=False
             )
             if detail.status_code != 200:
                 continue

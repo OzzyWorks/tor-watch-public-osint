@@ -29,29 +29,32 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Tor
         run: sudo apt-get update && sudo apt-get install -y tor
-      - name: Start Tor and wait for bootstrap
+      - name: Start Tor and wait for connectivity
         run: |
-          sudo systemctl start tor
+          sudo systemctl start tor@default || sudo systemctl start tor
           for i in $(seq 1 60); do
-            if sudo journalctl -u tor --no-pager -n 100 | grep -q "Bootstrapped 100%"; then
-              echo "Tor bootstrap completed"
+            if timeout 2 bash -c '</dev/tcp/127.0.0.1/9050' 2>/dev/null; then
+              echo "Tor SOCKS5 port is ready"
               break
             fi
             if [ "$i" -eq 60 ]; then
-              echo "Tor did not bootstrap within 5 minutes"
-              sudo journalctl -u tor --no-pager -n 150
+              echo "Tor SOCKS5 port did not open"
+              sudo systemctl status tor@default --no-pager || true
+              sudo systemctl status tor --no-pager || true
+              sudo journalctl -u tor@default --no-pager -n 100 || true
               exit 1
-            fi
-            sleep 5
-          done
-          for i in $(seq 1 20); do
-            if timeout 2 bash -c '</dev/tcp/127.0.0.1/9050' 2>/dev/null; then
-              echo "Tor SOCKS5 port is ready"
-              exit 0
             fi
             sleep 2
           done
-          echo "Tor SOCKS5 port is not listening"
+          for i in $(seq 1 60); do
+            if curl --silent --show-error --max-time 8 --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip | grep -q '"IsTor":true'; then
+              echo "Tor bootstrap and external connectivity verified"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Tor SOCKS is listening but Tor network connectivity failed"
+          sudo journalctl -u tor@default --no-pager -n 100 || true
           exit 1
       - uses: actions/setup-python@v5
         with:

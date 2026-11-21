@@ -146,6 +146,8 @@ def fetch(url, timeout=20):
             # A single stale post must not prevent the landing page being scanned.
             continue
 
-    text = " ".join(x for x in chunks if x)
+    # Preserve page boundaries so risk evidence on one detail page cannot
+    # be attributed to a company mentioned on another page.
+    text = "\n\n[TORWATCH_PAGE_BOUNDARY]\n\n".join(x for x in chunks if x)
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return title, text, digest

@@ -98,6 +98,7 @@ const readableReason=s=>{
  return v;
 };
 const reasonLines=x=>(x.reason_items||String(x.reasons||"").split(" | ")).map(readableReason);
+const evidenceHtml=x=>'<div class="meta">根拠の充実度: '+esc(x.evidence_label||"未評価")+' ('+Number(x.evidence_strength||0)+'/100) · '+esc(x.evidence_status||"被害未確認")+'</div><div class="meta">※自動判定。企業公式の被害確認を意味しません。</div>';
 
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
@@ -113,7 +114,7 @@ function render(){
    const l=level(x.risk);
    return '<div class="alert"><div><span class="badge '+l[1]+'">'+l[0]+' '+x.risk+'</span></div>'+
    '<div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.event_type.toUpperCase())+' · '+esc(x.url)+'</div>'+
-   '<div class="meta">'+esc(reasonLines(x).join(" / ")||"判定根拠なし")+'</div>'+
+   '<div class="meta">'+esc(reasonLines(x).join(" / ")||"判定根拠なし")+'</div>'+evidenceHtml(x)+
    (x.diff?'<details><summary>変更箇所を見る</summary><pre>'+esc(x.diff)+'</pre></details>':'')+
    '</div><div class="meta">'+esc(x.detected_at||"")+'</div></div>';
  }).join("")||'<div class="empty">まだアラートはありません。</div>';
@@ -178,6 +179,7 @@ function renderThreatAlerts(){
    '<div><div class="title">'+(safeUrl?'<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a>':esc(x.title))+'</div>'+
    '<div class="meta">対象企業: '+esc(x.matched_assets||"—")+'</div>'+
    '<div class="meta">'+esc(x.source)+' · '+esc(x.published||x.detected_at||"")+'</div>'+
+   evidenceHtml(x)+
    '<div class="meta">'+esc(x.status||"公開情報・未確認")+'</div>'+
    '<div class="meta">'+esc(x.reasons||"")+'</div></div>'+
    '<div class="meta">'+esc(x.detected_at||"")+'</div></div>';

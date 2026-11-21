@@ -1,10 +1,26 @@
 import unittest
 from torwatch.threat_intel import _matches, _parse_feed, _risk, _risk_near_matches
-from torwatch.risk import score
+from torwatch.risk import score, assess_evidence
 from torwatch.crawler import _candidate_links
 from bs4 import BeautifulSoup
 
 class ThreatIntelTests(unittest.TestCase):
+    def test_evidence_strength_is_separate_from_risk_and_never_confirms_breach(self):
+        name_only=assess_evidence(["company:Example Corp"])
+        self.assertEqual(name_only["evidence_strength"],15)
+        self.assertIn("企業名の一致のみ",name_only["evidence_status"])
+        claim=assess_evidence(["company:Example Corp","nearby_claim:data size"])
+        self.assertEqual(claim["evidence_strength"],40)
+        self.assertIn("未確認",claim["evidence_status"])
+        breach=assess_evidence(["company:Example Corp","nearby_breach:leak","nearby_data:customer data"])
+        self.assertEqual(breach["evidence_strength"],75)
+        self.assertFalse(breach["officially_confirmed"])
+
+    def test_public_report_is_not_treated_as_official_confirmation(self):
+        result=assess_evidence(["company_match:Example Corp","incident_term:ransomware"],"public_report")
+        self.assertIn("公開報道",result["evidence_status"])
+        self.assertFalse(result["officially_confirmed"])
+
     def test_company_name_match_japanese_and_english(self):
         assets={"names":["楽天証券株式会社","SBI SECURITIES Co., Ltd."],"domains":["sbisec.co.jp"]}
         self.assertIn("楽天証券株式会社",_matches("楽天証券株式会社で情報漏えい",assets))

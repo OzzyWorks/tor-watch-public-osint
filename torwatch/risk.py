@@ -149,3 +149,32 @@ def score(text, keywords, assets):
         reasons.append("global_keyword:" + ", ".join(matched[:8]))
     reasons.append("basis:監視対象企業との一致なし。参考情報")
     return min(30, len(matched) * 3), reasons
+
+
+def assess_evidence(reasons, source_type="leak_site"):
+    """Describe evidence strength separately from risk; never imply confirmation."""
+    parts = [str(x) for x in (reasons or [])]
+    has_company = any(x.startswith(("company:", "company_context:", "company_match:")) for x in parts)
+    has_breach = any(x.startswith(("nearby_breach:", "incident_term:")) for x in parts)
+    has_data = any(x.startswith("nearby_data:") for x in parts)
+    has_claim = any(x.startswith("nearby_claim:") for x in parts)
+    if not has_company:
+        strength, label, status = 0, "対象企業との一致なし", "監視対象企業との関連未確認"
+    elif has_breach and has_data:
+        strength, label, status = 75, "複数の根拠語が近接", "漏洩・侵害の掲載主張あり（真偽未確認）"
+    elif has_breach:
+        strength, label, status = 60, "漏洩・侵害関連語あり", "漏洩・侵害の掲載主張あり（真偽未確認）"
+    elif has_claim:
+        strength, label, status = 40, "データ量等の掲載表現のみ", "掲載情報あり・漏洩主張は未確認"
+    elif has_data:
+        strength, label, status = 35, "情報種別の記載あり", "情報種別の記載あり・被害との関連未確認"
+    else:
+        strength, label, status = 15, "企業名の一致のみ", "企業名の一致のみ・被害根拠なし"
+    if source_type == "public_report" and has_company and has_breach:
+        status = "公開報道・情報源の記載あり（企業公式確認は未判定）"
+    return {
+        "evidence_strength": strength,
+        "evidence_label": label,
+        "evidence_status": status,
+        "officially_confirmed": False,
+    }

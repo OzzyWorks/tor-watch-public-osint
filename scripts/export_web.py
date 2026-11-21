@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 
 import yaml
 from torwatch.analytics import build_company_radar, build_group_activity
+from torwatch.risk import assess_evidence
 
 DB=Path("data/history.db")
 OUT=Path("web/data.json")
@@ -26,7 +27,7 @@ def _level(risk):
 def _reason_fields(raw, risk):
     parts=[x.strip() for x in str(raw or "").split(" | ") if x.strip()]
     companies=[x.split(":",1)[1].strip() for x in parts if x.startswith("company:")]
-    return {"reason_items":parts,"companies":companies,"risk_level":_level(risk)}
+    return {"reason_items":parts,"companies":companies,"risk_level":_level(risk),**assess_evidence(parts)}
 
 pages=[]
 events=[]
@@ -48,7 +49,7 @@ if DB.exists():
     try:
         rows=con.execute("""SELECT id,source,title,url,published,matched_assets,risk,reasons,status,detected_at
             FROM threat_items ORDER BY detected_at DESC LIMIT 200""").fetchall()
-        threat_alerts=[dict(r) for r in rows]
+        threat_alerts=[{**dict(r),**assess_evidence(str(r["reasons"] or "").split(" | "), "public_report")} for r in rows]
     except sqlite3.OperationalError:
         pass
     try:

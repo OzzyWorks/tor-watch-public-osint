@@ -3,7 +3,7 @@ import hashlib
 import json
 from .config import load_lines, load_assets
 from .crawler import fetch
-from .risk import canonical_company_key, score
+from .risk import canonical_company_key, score, assess_evidence
 from .storage import (
     get, save, add_event, enqueue_notification, pending_notifications,
     mark_notification_sent, mark_notification_failed, record_site_check,
@@ -90,8 +90,10 @@ def _alert_message(url,title,state,risk,reasons):
         "*判定理由:*",
     ]
     lines += ["• "+x for x in _reason_text(reasons)]
+    evidence=assess_evidence(reasons)
     lines += [
-        "*確認状況:* 公開リークサイト上の記載を検出。実際の流出・真偽は未確認。",
+        f"*根拠の充実度:* {evidence["evidence_label"]} ({evidence["evidence_strength"]}/100)",
+        f"*確認状況:* {evidence["evidence_status"]}",
         f"*検知URL:* {url}",
     ]
     return "\n".join(lines)

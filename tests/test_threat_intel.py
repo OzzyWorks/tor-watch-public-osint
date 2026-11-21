@@ -56,6 +56,26 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertEqual(risk, 55)
         self.assertTrue(any(x.startswith("nearby_claim:data size") for x in reasons))
 
+    def test_risk_evidence_does_not_cross_crawled_page_boundaries(self):
+        # A company on the landing page and breach terms on a separate detail
+        # page must not be combined into a false HIGH/CRITICAL match.
+        page = (
+            "Sekisui House corporate profile and company overview "
+            "\\n\\n[TORWATCH_PAGE_BOUNDARY]\\n\\n"
+            "unrelated ransomware leak customer database employee personal data"
+        )
+        risk, reasons = score(page, [], {"names": ["Sekisui House"]})
+        self.assertEqual(risk, 20)
+        self.assertIn("company:Sekisui House", reasons)
+
+    def test_risk_evidence_within_one_page_still_scores_high(self):
+        page = (
+            "Sekisui House ransomware leak customer database employee personal data"
+        )
+        risk, reasons = score(page, [], {"names": ["Sekisui House"]})
+        self.assertEqual(risk, 90)
+        self.assertTrue(any(x.startswith("nearby_breach:") for x in reasons))
+
     def test_generic_employee_and_client_words_do_not_make_critical(self):
         page = "Former clients and employees. Sekisui House " + ("company profile " * 10) + "1 TB Data size leak"
         risk, reasons = score(page, [], {"names": ["Sekisui House"]})

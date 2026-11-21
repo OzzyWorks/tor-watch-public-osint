@@ -167,7 +167,20 @@ function renderGroupActivity(){
    '<div class="meta">最終確認 '+esc(x.last_seen||"—")+'</div></div>';
  }).join("")||'<div class="empty">攻撃グループの監視記録はまだありません。</div>';
 }
-function renderThreatAlerts(){
+
+function renderIncidentCorrelations(){
+ const items=DATA.incident_correlations||[];
+ const host=document.getElementById("incidentCorrelations");
+ if(!host)return;
+ host.innerHTML=items.slice(0,30).map(x=>{
+   const links=(x.items||[]).map(item=>'<div class="meta">• '+esc(item.source)+' · '+esc(item.title)+' · '+(String(item.url||"").startsWith("https://")?'<a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">記事</a>':"URLなし")+'</div>').join("");
+   return '<div class="row"><div><div class="title">'+esc(x.company)+'</div><div class="meta">'+esc(x.title)+'</div></div>'+
+   '<div><span class="badge high">'+x.source_count+'媒体</span></div>'+
+   '<div class="meta">最大重要度 '+x.max_risk+' · 記事 '+x.item_count+'件</div>'+
+   '<div class="meta">'+esc(x.latest||"")+'</div><div style="grid-column:1/-1">'+links+'<div class="meta">※ '+esc(x.caveat)+'</div></div></div>';
+ }).join("")||'<div class="empty">複数ドメインで照合できた企業インシデント候補はありません。</div>';
+}
+\nfunction renderThreatAlerts(){
  const items=DATA.threat_alerts||[];
  const host=document.getElementById("threatAlerts");
  if(!host)return;

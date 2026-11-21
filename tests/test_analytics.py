@@ -1,5 +1,5 @@
 import unittest
-from torwatch.analytics import build_company_radar, build_group_activity
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations
 
 
 class AnalyticsTests(unittest.TestCase):

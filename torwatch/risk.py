@@ -78,14 +78,11 @@ def score(text, keywords, assets):
                 sensitive = _terms_in(context, DATA_TERMS)
                 evidence_by_company.append((label, breach, claims, sensitive))
 
-    reasons = ["company:" + name for name in companies]
-    strongest = 0
-    best_breach = []
-    best_claims = []
-    best_sensitive = []
-
+    # Keep the risk score attached only to the company whose own nearby
+    # evidence produced that score. A high-risk mention of Company A must not
+    # make every other company name on the same page look equally affected.
+    per_company = {}
     for company, breach, claims, sensitive in evidence_by_company:
-        # Score each company independently; don't combine unrelated page sections.
         if breach and len(set(sensitive)) >= 2:
             score_value = 90
         elif breach and sensitive:
@@ -100,11 +97,24 @@ def score(text, keywords, assets):
             score_value = 35
         else:
             score_value = 20
-        if score_value > strongest:
-            strongest = score_value
-            best_breach = breach
-            best_claims = claims
-            best_sensitive = sensitive
+        item = per_company.setdefault(company, {
+            "score": 0, "breach": [], "claims": [], "sensitive": []
+        })
+        if score_value > item["score"]:
+            item["score"] = score_value
+            item["breach"] = breach
+            item["claims"] = claims
+            item["sensitive"] = sensitive
+
+    strongest = max((item["score"] for item in per_company.values()), default=0)
+    companies = [name for name, item in per_company.items()
+                 if item["score"] == strongest]
+    best = next((item for item in per_company.values()
+                 if item["score"] == strongest), {})
+    best_breach = best.get("breach", [])
+    best_claims = best.get("claims", [])
+    best_sensitive = best.get("sensitive", [])
+    reasons = ["company:" + name for name in companies]
 
     if companies:
         if best_breach:

@@ -54,7 +54,15 @@ def score(text, keywords, assets):
             value = str(raw).strip()
             if len(value) < 4:
                 continue
-            positions = _occurrences(source, value)
+            # The crawler joins the landing page and each detail page with an
+            # explicit boundary. Never let evidence on one page raise the score
+            # for a company mentioned on a different page.
+            segments = re.split(r"\n\s*\[TORWATCH_PAGE_BOUNDARY\]\s*\n", source)
+            positions = [
+                (segment, pos)
+                for segment in segments
+                for pos in _occurrences(segment, value)
+            ]
             if not positions:
                 continue
             label = value
@@ -63,8 +71,8 @@ def score(text, keywords, assets):
                 label = name_labels.setdefault(key, value)
             if label not in companies:
                 companies.append(label)
-            for pos in positions:
-                context = source[max(0, pos - 650): min(len(source), pos + len(value) + 650)]
+            for segment, pos in positions:
+                context = segment[max(0, pos - 650): min(len(segment), pos + len(value) + 650)]
                 breach = _terms_in(context, BREACH_TERMS)
                 claims = _terms_in(context, CLAIM_TERMS)
                 sensitive = _terms_in(context, DATA_TERMS)

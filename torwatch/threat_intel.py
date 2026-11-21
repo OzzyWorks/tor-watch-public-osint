@@ -95,25 +95,32 @@ def _risk_near_matches(text, matches, radius=1200):
     folded = str(text or "").casefold()
     best_risk = 0
     best_reasons = []
-    best_match = ""
+    best_matches = []
     for match in matches or []:
         needle = str(match).casefold()
         if not needle:
             continue
         start = 0
+        match_risk = 0
+        match_reasons = []
         while True:
             pos = folded.find(needle, start)
             if pos < 0:
                 break
             context = folded[max(0, pos - radius):min(len(folded), pos + len(needle) + radius)]
             risk, reasons = _risk(context)
-            if risk > best_risk:
-                best_risk = risk
-                best_reasons = reasons
-                best_match = str(match)
+            if risk > match_risk:
+                match_risk = risk
+                match_reasons = reasons
             start = pos + max(1, len(needle))
+        if match_risk > best_risk:
+            best_risk = match_risk
+            best_reasons = match_reasons
+            best_matches = [str(match)]
+        elif match_risk and match_risk == best_risk:
+            best_matches.append(str(match))
     if best_risk:
-        return best_risk, ["company_context:" + best_match] + best_reasons
+        return best_risk, ["company_context:" + name for name in dict.fromkeys(best_matches)] + best_reasons
     return 0, ["basis:企業名と近接するインシデント根拠なし"]
 
 def run_public_monitor():
@@ -153,6 +160,15 @@ def run_public_monitor():
                 risk,reasons=_risk_near_matches(body,matches)
                 if risk<45:
                     continue
+                # Only attribute the alert to organisations whose own nearby
+                # context contains incident language; other names in the same
+                # article are not automatically affected companies.
+                contextual_matches=[
+                    reason.split(":",1)[1] for reason in reasons
+                    if reason.startswith("company_context:")
+                ]
+                if contextual_matches:
+                    matches=contextual_matches
                 url=entry["url"] or feed_url
                 identity=entry["guid"] or url or (entry["title"]+entry["published"])
                 item_id=hashlib.sha256((source.get("id","")+"|"+identity).encode("utf-8")).hexdigest()

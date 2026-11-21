@@ -61,7 +61,7 @@ class ThreatIntelTests(unittest.TestCase):
         # page must not be combined into a false HIGH/CRITICAL match.
         page = (
             "Sekisui House corporate profile and company overview "
-            "\\n\\n[TORWATCH_PAGE_BOUNDARY]\\n\\n"
+            "\n\n[TORWATCH_PAGE_BOUNDARY]\n\n"
             "unrelated ransomware leak customer database employee personal data"
         )
         risk, reasons = score(page, [], {"names": ["Sekisui House"]})

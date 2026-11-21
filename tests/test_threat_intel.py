@@ -50,6 +50,20 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertIn("company:Sekisui House",reasons)
         self.assertTrue(any(x.startswith("nearby_breach:") for x in reasons))
 
+    def test_high_risk_evidence_is_not_attributed_to_other_companies_on_same_page(self):
+        page = (
+            "Sekisui House ransomware leak customer database employee personal data. "
+            + ("ordinary company profile " * 50)
+            + "Sony Group Corporation announced an ordinary office update."
+        )
+        risk, reasons = score(
+            page, [],
+            {"names": ["Sekisui House", "Sony Group Corporation"]}
+        )
+        self.assertEqual(risk, 90)
+        self.assertIn("company:Sekisui House", reasons)
+        self.assertNotIn("company:Sony Group Corporation", reasons)
+
     def test_company_listing_with_data_size_is_medium(self):
         page = "Sekisui House " + ("company profile and business overview " * 8) + "1 TB Data size JP Country"
         risk, reasons = score(page, [], {"names": ["Sekisui House"]})

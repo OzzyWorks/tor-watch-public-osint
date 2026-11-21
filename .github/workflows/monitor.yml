@@ -2,9 +2,6 @@ name: Tor Watch Monitor
 
 on:
   workflow_dispatch:
-  schedule:
-    # GitHub Actions cron is UTC: 02:17, 08:17, 14:17, 20:17 JST.
-    - cron: "17 */6 * * *"
 
 concurrency:
   group: tor-watch-public-osint

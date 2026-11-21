@@ -15,3 +15,15 @@ sources:
     name: BleepingComputer
     url: https://www.bleepingcomputer.com/feed/
     enabled: true
+  - id: securityweek
+    name: SecurityWeek
+    url: https://www.securityweek.com/feed/
+    enabled: true
+  - id: therecord
+    name: The Record by Recorded Future
+    url: https://therecord.media/feed/
+    enabled: true
+  - id: darkreading
+    name: Dark Reading
+    url: https://www.darkreading.com/rss.xml
+    enabled: true

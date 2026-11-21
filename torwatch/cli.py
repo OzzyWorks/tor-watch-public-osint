@@ -92,8 +92,8 @@ def _alert_message(url,title,state,risk,reasons):
     lines += ["• "+x for x in _reason_text(reasons)]
     evidence=assess_evidence(reasons)
     lines += [
-        f"*根拠の充実度:* {evidence["evidence_label"]} ({evidence["evidence_strength"]}/100)",
-        f"*確認状況:* {evidence["evidence_status"]}",
+        f"*根拠の充実度:* {evidence['evidence_label']} ({evidence['evidence_strength']}/100)",
+        f"*確認状況:* {evidence['evidence_status']}",
         f"*検知URL:* {url}",
     ]
     return "\n".join(lines)

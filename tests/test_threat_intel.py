@@ -36,6 +36,19 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertEqual(risk, 75)
         self.assertIn("company_context:Sony Group Corporation", reasons)
 
+    def test_rss_risk_is_attributed_only_to_company_near_incident_terms(self):
+        text = (
+            "Sony Group Corporation "
+            + ("ordinary company profile " * 65)
+            + "Sekisui House ransomware data breach exposed customer data"
+        )
+        risk, reasons = _risk_near_matches(
+            text, ["Sony Group Corporation", "Sekisui House"]
+        )
+        self.assertEqual(risk, 75)
+        self.assertIn("company_context:Sekisui House", reasons)
+        self.assertNotIn("company_context:Sony Group Corporation", reasons)
+
     def test_risk_requires_incident_language(self):
         score,_=_risk("Oracle software vulnerability advisory")
         self.assertEqual(score,0)

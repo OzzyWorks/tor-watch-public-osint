@@ -20,6 +20,7 @@
 details{margin-top:8px;color:#aeb9cc;font-size:12px}details pre{white-space:pre-wrap;background:#0b1020;padding:12px;border-radius:8px;overflow:auto}
 .row{display:grid;grid-template-columns:1fr 90px 1fr 165px;gap:12px;padding:13px 0;border-bottom:1px solid #222d45;align-items:center}
 .health-row{display:grid;grid-template-columns:minmax(0,1fr) 105px minmax(170px,1fr) minmax(200px,1.2fr);gap:12px;padding:13px 0;border-bottom:1px solid #222d45;align-items:center}
+.history-dots{display:flex;gap:5px;align-items:center;margin-top:8px}.history-dot{width:9px;height:9px;border-radius:50%;display:inline-block}.history-dot.ok{background:#6ed9a0}.history-dot.error{background:#ff7380}
 button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8px;padding:7px 11px;cursor:pointer}
 .empty{padding:24px 0;color:#7f8ca5}
 @media(max-width:1000px){.cards{grid-template-columns:repeat(3,1fr)}}
@@ -123,10 +124,12 @@ function renderSiteHealth(){
    const checked=x.checked_at?new Date(x.checked_at).toLocaleString("ja-JP"):"—";
    const lastSuccess=x.last_success_at?new Date(x.last_success_at).toLocaleString("ja-JP"):"成功履歴なし";
    const detail=failed?'<details><summary>'+esc(errorTypeLabel(x.error_type))+' · 詳細</summary><div>'+esc(x.error||"詳細なし")+'</div></details>':"HTML取得成功";
+   const history=(x.history||[]).slice(0,6);
+   const historyHtml=history.length?'<div class="history-dots" aria-label="直近の取得履歴">'+history.map(h=>'<span class="history-dot '+(h.status==="ok"?"ok":"error")+'" title="'+esc(h.checked_at)+' · '+(h.status==="ok"?"成功":esc(errorTypeLabel(h.error_type)))+'"></span>').join("")+'</div><div class="meta">直近'+history.length+'回：'+history.filter(h=>h.status==="ok").length+'成功 / '+history.filter(h=>h.status!=="ok").length+'失敗（左が最新）</div>':'';
    return '<div class="health-row"><div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.url)+'</div></div>'+
      '<div><span class="badge '+(failed?"unavailable":"normal")+'">'+(failed?"取得エラー":"取得成功")+'</span></div>'+
      '<div class="meta">最終確認 '+esc(checked)+'<br>最終成功 '+esc(lastSuccess)+'<br>'+(failed?"連続失敗 "+(x.consecutive_errors||0)+"回":"連続失敗なし")+'</div>'+
-     '<div class="meta">'+detail+'</div></div>';
+     '<div class="meta">'+detail+historyHtml+'</div></div>';
  }).join("")||'<div class="empty">取得状況の記録がありません。</div>';
 }
 function renderCompanyRadar(){

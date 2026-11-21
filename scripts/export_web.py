@@ -57,6 +57,11 @@ if DB.exists():
             ORDER BY CASE WHEN status='error' THEN 0 ELSE 1 END,
             consecutive_errors DESC,checked_at DESC""").fetchall()
         site_health=[dict(r) for r in rows]
+        for item in site_health:
+            history=con.execute("""SELECT status,error_type,checked_at
+                FROM site_check_history WHERE url=?
+                ORDER BY checked_at DESC LIMIT 6""",(item["url"],)).fetchall()
+            item["history"]=[dict(x) for x in history]
     except sqlite3.OperationalError:
         pass
     con.close()

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from torwatch import storage
 from torwatch.cli import _classify_fetch_error
-from torwatch.crawler import _safe_redirect_target
+from torwatch.crawler import _safe_redirect_target, _get_detail
 
 
 class SiteHealthTests(unittest.TestCase):
@@ -41,6 +41,27 @@ class SiteHealthTests(unittest.TestCase):
         item = storage.list_site_checks()[0]
         self.assertEqual(item["last_success_at"], last_success)
         self.assertEqual(item["title"], "Legacy page")
+
+    def test_detail_fetch_does_not_follow_redirects(self):
+        class FakeSession:
+            def __init__(self):
+                self.kwargs = None
+            def get(self, url, **kwargs):
+                self.kwargs = kwargs
+                return object()
+
+        session = FakeSession()
+        _get_detail(session, "http://exampleonion.onion/post", (3, 5), {})
+        self.assertIs(session.kwargs["allow_redirects"], False)
+
+    def test_site_check_history_records_each_attempt(self):
+        url = "http://historyonion.onion/"
+        storage.record_site_check(url, "ok", title="Example")
+        storage.record_site_check(url, "error", error_type="timeout", error="timed out")
+        storage.record_site_check(url, "ok", title="Example")
+        history = storage.list_site_check_history(url, limit=3)
+        self.assertEqual([x["status"] for x in history], ["ok", "error", "ok"])
+        self.assertEqual(history[1]["error_type"], "timeout")
 
     def test_redirect_target_stays_on_same_host_and_html_only(self):
         base = "http://exampleonion.onion/"

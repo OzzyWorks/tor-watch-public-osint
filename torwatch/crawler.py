@@ -93,6 +93,13 @@ def _safe_redirect_target(base_url, location):
     return parsed._replace(fragment="").geturl()
 
 
+def _get_detail(session, detail_url, timeout, headers):
+    """Fetch a detail page without following redirects to other resources or hosts."""
+    return session.get(
+        detail_url, timeout=timeout, headers=headers, allow_redirects=False
+    )
+
+
 def fetch(url, timeout=20):
     session = requests.Session()
     session.proxies.update({
@@ -127,9 +134,7 @@ def fetch(url, timeout=20):
     # external links or links that look like downloadable files.
     for detail_url, label in _candidate_links(final_url, soup):
         try:
-            detail = session.get(
-                detail_url, timeout=(3, 5), headers=headers, allow_redirects=False
-            )
+            detail = _get_detail(session, detail_url, timeout=(3, 5), headers=headers)
             if detail.status_code != 200:
                 continue
             detail_type = detail.headers.get("Content-Type", "").lower()

@@ -38,6 +38,12 @@ def merge_databases(remote_path, local_path, output_path):
         error_type TEXT NOT NULL DEFAULT '', error TEXT NOT NULL DEFAULT '',
         checked_at TEXT NOT NULL, last_success_at TEXT,
         consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
+    con.execute("""CREATE TABLE IF NOT EXISTS site_check_history(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT NOT NULL,
+        status TEXT NOT NULL, error_type TEXT NOT NULL DEFAULT '',
+        error TEXT NOT NULL DEFAULT '', checked_at TEXT NOT NULL,
+        UNIQUE(url, checked_at))""")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_site_check_history_url_time ON site_check_history(url, checked_at DESC)")
 
     # Keep the newest observation for each monitored URL.
     for row in local.execute("SELECT url,title,sha256,text,risk,reasons,checked_at FROM pages"):
@@ -82,6 +88,18 @@ def merge_databases(remote_path, local_path, output_path):
             consecutive_errors=excluded.consecutive_errors
             WHERE COALESCE(excluded.checked_at,'') >= COALESCE(site_checks.checked_at,'')""",
             tuple(row))
+
+    # Merge individual fetch observations so the dashboard can show recovery trends.
+    try:
+        history_rows=local.execute("""SELECT url,status,error_type,error,checked_at
+            FROM site_check_history""").fetchall()
+    except sqlite3.OperationalError:
+        history_rows=[]
+    for row in history_rows:
+        con.execute("""INSERT OR IGNORE INTO site_check_history
+            (url,status,error_type,error,checked_at) VALUES(?,?,?,?,?)""", tuple(row))
+    con.execute("""DELETE FROM site_check_history WHERE id NOT IN
+        (SELECT id FROM site_check_history ORDER BY checked_at DESC LIMIT 3000)""")
 
     # Preserve sent state if either copy has delivered the notification.
     for row in local.execute("""SELECT id,message,status,attempts,created_at,sent_at,last_error

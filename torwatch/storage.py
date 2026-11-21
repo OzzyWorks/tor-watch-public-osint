@@ -27,6 +27,12 @@ def init():
         error_type TEXT NOT NULL DEFAULT '', error TEXT NOT NULL DEFAULT '',
         checked_at TEXT NOT NULL, last_success_at TEXT,
         consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
+    con.execute("""CREATE TABLE IF NOT EXISTS site_check_history(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT NOT NULL,
+        status TEXT NOT NULL, error_type TEXT NOT NULL DEFAULT '',
+        error TEXT NOT NULL DEFAULT '', checked_at TEXT NOT NULL,
+        UNIQUE(url, checked_at))""")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_site_check_history_url_time ON site_check_history(url, checked_at DESC)")
     con.commit()
     return con
 
@@ -68,6 +74,11 @@ def record_site_check(url,status,title="",error_type="",error=""):
         checked_at=excluded.checked_at,last_success_at=excluded.last_success_at,
         consecutive_errors=excluded.consecutive_errors""",
         (url,status,stored_title,error_type,str(error)[:400],now,last_success_at,consecutive_errors))
+    con.execute("""INSERT OR IGNORE INTO site_check_history
+        (url,status,error_type,error,checked_at) VALUES(?,?,?,?,?)""",
+        (url,status,error_type,str(error)[:400],now))
+    con.execute("""DELETE FROM site_check_history WHERE id NOT IN
+        (SELECT id FROM site_check_history ORDER BY checked_at DESC LIMIT 3000)""")
     con.commit()
     con.close()
 
@@ -80,6 +91,14 @@ def list_site_checks(limit=200):
     con.close()
     keys=("url","status","title","error_type","error","checked_at",
           "last_success_at","consecutive_errors")
+    return [dict(zip(keys,row)) for row in rows]
+
+def list_site_check_history(url,limit=6):
+    con=init()
+    rows=con.execute("""SELECT status,error_type,checked_at FROM site_check_history
+        WHERE url=? ORDER BY checked_at DESC LIMIT ?""",(url,limit)).fetchall()
+    con.close()
+    keys=("status","error_type","checked_at")
     return [dict(zip(keys,row)) for row in rows]
 
 def save(url,title,sha,text,risk,reasons):

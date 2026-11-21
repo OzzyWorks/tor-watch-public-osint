@@ -33,5 +33,30 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(result[0]["changed_pages"], 2)
 
 
+    def test_correlates_same_company_reports_across_distinct_domains(self):
+        alerts = [
+            {"matched_assets":"Example Corp","title":"Example Corp hit by ransomware attack","url":"https://news-a.example/story","source":"News A","risk":75,"published":"2026-11-20T10:00:00+00:00","reasons":"incident_term:ransomware"},
+            {"matched_assets":"Example Corp","title":"Ransomware attack hits Example Corp","url":"https://news-b.example/report","source":"News B","risk":75,"published":"2026-11-21T10:00:00+00:00","reasons":"incident_term:ransomware"},
+        ]
+        result = build_incident_correlations(alerts)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["source_count"], 2)
+        self.assertIn("独立した裏付けとは限りません", result[0]["caveat"])
+
+    def test_correlation_does_not_merge_different_companies_or_single_domain(self):
+        alerts = [
+            {"matched_assets":"Example Corp","title":"Example Corp ransomware attack","url":"https://news-a.example/a","risk":75,"published":"2026-11-20","reasons":"ransomware"},
+            {"matched_assets":"Other Corp","title":"Other Corp ransomware attack","url":"https://news-b.example/b","risk":75,"published":"2026-11-20","reasons":"ransomware"},
+            {"matched_assets":"Example Corp","title":"Example Corp ransomware attack update","url":"https://news-a.example/c","risk":75,"published":"2026-11-20","reasons":"ransomware"},
+        ]
+        self.assertEqual(build_incident_correlations(alerts), [])
+
+    def test_correlation_ignores_reports_outside_date_window(self):
+        alerts = [
+            {"matched_assets":"Example Corp","title":"Example Corp ransomware attack","url":"https://news-a.example/a","risk":75,"published":"2026-09-01","reasons":"ransomware"},
+            {"matched_assets":"Example Corp","title":"Example Corp ransomware attack","url":"https://news-b.example/b","risk":75,"published":"2026-11-20","reasons":"ransomware"},
+        ]
+        self.assertEqual(build_incident_correlations(alerts), [])
+
 if __name__ == "__main__":
     unittest.main()

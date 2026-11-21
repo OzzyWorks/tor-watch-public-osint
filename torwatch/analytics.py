@@ -113,7 +113,7 @@ def _title_tokens(alert, company):
     if name:
         title = title.replace(name, " ")
     return {
-        token for token in re.findall(r"[a-z0-9]{3,}|[\\u3040-\\u30ff\\u3400-\\u9fff]{2,}", title)
+        token for token in re.findall(r"[a-z0-9]{3,}|[\u3040-\u30ff\u3400-\u9fff]{2,}", title)
         if token not in {"the", "and", "for", "with", "from", "after", "about", "this", "that"}
     }
 

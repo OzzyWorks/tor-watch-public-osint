@@ -1,5 +1,5 @@
 import unittest
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 
 
 class AnalyticsTests(unittest.TestCase):
@@ -58,6 +58,29 @@ class AnalyticsTests(unittest.TestCase):
         ]
         self.assertEqual(build_incident_correlations(alerts), [])
 
+
+    def test_company_timeline_groups_events_and_deduplicates_repeated_public_headlines(self):
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        events = [
+            {"event_type":"new","url":"http://leak.example/post","title":"Example Corp listing",
+             "reasons":"company:Example Corp","detected_at":now},
+            {"event_type":"changed","url":"http://leak.example/post","title":"Example Corp listing",
+             "reasons":"company:Example Corp","detected_at":now},
+        ]
+        alerts = [
+            {"matched_assets":"Example Corp","title":"Example Corp hit by ransomware",
+             "url":"https://news-a.example/a","source":"News A","published":now},
+            {"matched_assets":"Example Corp","title":"Example Corp hit by ransomware",
+             "url":"https://news-b.example/b","source":"News B","published":now},
+        ]
+        result = build_company_timeline(events, alerts)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["company"], "Example Corp")
+        self.assertEqual(len(result[0]["items"]), 3)
+        public = [x for x in result[0]["items"] if x["type"] == "public_report"]
+        self.assertEqual(len(public), 1)
+        self.assertEqual(len(public[0]["urls"]), 2)
 
     def test_public_alert_explanation_distinguishes_name_match_from_breach_claim(self):
         name_only = explain_public_alert({"matched_assets":"Example Corp","evidence_strength":15})

@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import yaml
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 from torwatch.risk import assess_evidence
 
 DB=Path("data/history.db")
@@ -72,11 +72,12 @@ group_config=yaml.safe_load(GROUPS.read_text(encoding="utf-8")) if GROUPS.exists
 company_radar=build_company_radar(pages,events,threat_alerts)
 group_activity=build_group_activity(pages,events,group_config.get("groups",[]))
 incident_correlations=build_incident_correlations(threat_alerts)
+company_timeline=build_company_timeline(events,threat_alerts)
 executive_summary=build_executive_summary(pages,events,threat_alerts,site_health,incident_correlations)
 OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity,
-    "incident_correlations":incident_correlations,"executive_summary":executive_summary
+    "incident_correlations":incident_correlations,"company_timeline":company_timeline,"executive_summary":executive_summary
 },ensure_ascii=False,indent=2),encoding="utf-8")

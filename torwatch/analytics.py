@@ -39,12 +39,83 @@ def build_company_radar(pages, events, threat_alerts):
             if company in stats:
                 stats[company]["event_count"] += 1
     for alert in threat_alerts:
-        for company in str(alert.get("matched_assets") or "").split(" | "):
+        raw = alert.get("matched_assets") or ""
+        companies = raw if isinstance(raw, list) else str(raw).split(" | ")
+        for company in companies:
+            company = str(company).strip()
             if company in stats:
                 stats[company]["public_reports"] += 1
     for item in stats.values():
         item["risk_level"] = _level(item["max_risk"])
     return sorted(stats.values(), key=lambda x: (-x["max_risk"], -x["event_count"], x["company"]))
+
+
+
+def build_company_timeline(events, threat_alerts, max_items=8):
+    """Build a deduplicated, dated activity timeline per matched company."""
+    grouped = defaultdict(dict)
+
+    def add(company, record, fingerprint):
+        if not company:
+            return
+        previous = grouped[company].get(fingerprint)
+        if previous is None or record["when"] > previous["when"]:
+            grouped[company][fingerprint] = record
+        elif record.get("url") and record["url"] not in previous["urls"]:
+            previous["urls"].append(record["url"])
+            if record.get("source") and record["source"] not in previous["sources"]:
+                previous["sources"].append(record["source"])
+
+    for event in events or []:
+        kind = str(event.get("event_type") or "")
+        if kind not in ("new", "changed", "reclassified"):
+            continue
+        when = _published_datetime(event.get("detected_at"))
+        if not when:
+            continue
+        title = str(event.get("title") or event.get("url") or "タイトルなし")
+        url = str(event.get("url") or "")
+        for company in _companies(event.get("reasons")):
+            fingerprint = ("monitor", url, kind)
+            add(company, {
+                "company": company, "type": kind,
+                "label": {"new": "リークサイト新規掲載", "changed": "リークサイト掲載内容の更新",
+                          "reclassified": "監視ページのリスク再判定"}[kind],
+                "title": title, "when": when, "date": when.isoformat(),
+                "source": "公開リークサイト監視", "sources": ["公開リークサイト監視"],
+                "url": url, "urls": [url] if url else [],
+                "note": "監視ページ上の変化。企業の被害確定を意味しません。",
+            }, fingerprint)
+
+    for alert in threat_alerts or []:
+        when = _published_datetime(alert.get("published")) or _published_datetime(alert.get("detected_at"))
+        if not when:
+            continue
+        raw = alert.get("matched_assets") or ""
+        companies = raw if isinstance(raw, list) else str(raw).split(" | ")
+        title = str(alert.get("title") or alert.get("url") or "タイトルなし")
+        url = str(alert.get("url") or "")
+        source = str(alert.get("source") or (urlparse(url).hostname or "公開情報"))
+        for company in dict.fromkeys(str(x).strip() for x in companies if str(x).strip()):
+            normalized = re.sub(r"[^a-z0-9\\u3040-\\u30ff\\u3400-\\u9fff]+", "", title.casefold())
+            fingerprint = ("public", normalized or url)
+            add(company, {
+                "company": company, "type": "public_report",
+                "label": "公開報道・セキュリティ情報",
+                "title": title, "when": when, "date": when.isoformat(),
+                "source": source, "sources": [source],
+                "url": url, "urls": [url] if url else [],
+                "note": "公開記事・情報源での言及。企業公式の被害確認は未確認です。",
+            }, fingerprint)
+
+    output = []
+    for company, records in grouped.items():
+        items = sorted(records.values(), key=lambda x: x["when"], reverse=True)[:max_items]
+        for item in items:
+            item.pop("when", None)
+        if items:
+            output.append({"company": company, "event_count": len(records), "items": items})
+    return sorted(output, key=lambda x: (x["items"][0]["date"] if x["items"] else "", x["company"]), reverse=True)
 
 
 def build_group_activity(pages, events, groups):

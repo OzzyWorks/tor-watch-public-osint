@@ -75,8 +75,14 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 </section>
 
 <section class="panel">
+<h2>🗓️ 企業別の動き（時系列）</h2>
+<div class="sub">企業名に一致した監視イベントと公開情報を時系列で表示。同じ見出しの記事はまとめ、複数の掲載先を残します。記事の言及は被害確定ではありません。</div>
+<div id="companyTimeline"></div>
+</section>
+
+<section class="panel">
 <h2>🏢 企業別脅威レーダー</h2>
-<div class="sub">監視ページ・公開報道から企業ごとの最大リスクと検知履歴を集計。自動マッチング結果であり、被害確定ではありません。</div>
+<div class="sub">監視ページのスコアと公開情報の件数を企業名ごとに集計。スコアは監視ページ側の判定であり、企業の被害深刻度・被害確率ではありません。</div>
 <div id="companyRadar"></div>
 </section>
 
@@ -169,6 +175,7 @@ function render(){
  renderExecutiveSummary();
  renderThreatAlerts();
  renderIncidentCorrelations();
+ renderCompanyTimeline();
  renderCompanyRadar();
  renderGroupActivity();
  renderSiteHealth();
@@ -209,6 +216,21 @@ function renderSiteHealth(){
      '<div class="meta">'+detail+historyHtml+'</div></div>';
  }).join("")||'<div class="empty">取得状況の記録がありません。</div>';
 }
+function renderCompanyTimeline(){
+ const groups=DATA.company_timeline||[];
+ const host=document.getElementById("companyTimeline");
+ if(!host)return;
+ host.innerHTML=groups.slice(0,50).map(g=>{
+   const items=(g.items||[]).map(x=>{
+     const links=(x.urls||[]).filter(u=>/^https?:\\/\\//i.test(u)).map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+(i===0?'原文':'別掲載')+'</a>').join(' · ');
+     return '<div class="change-entry"><strong>'+esc(x.label)+'</strong> · '+esc(x.date||'')+
+       '<div class="title">'+esc(x.title)+'</div><div class="meta">'+esc((x.sources||[]).join(' / '))+
+       (links?' · '+links:'')+'</div><div class="meta">'+esc(x.note||'')+'</div></div>';
+   }).join("");
+   return '<div class="exec-item"><div class="title">'+esc(g.company)+' · '+Number(g.event_count||0)+'件</div>'+items+'</div>';
+ }).join("")||'<div class="empty">企業別の新規掲載・更新・公開情報はまだありません。</div>';
+}
+
 function renderCompanyRadar(){
  const items=DATA.company_radar||[];
  const host=document.getElementById("companyRadar");

@@ -124,7 +124,7 @@ const evidenceHtml=x=>'<div class="meta">根拠の充実度: '+esc(x.evidence_la
 
 
 function renderExecutiveSummary(){
- const s=DATA.executive_summary||{}, c=s.counts||{};
+ const s=DATA.executive_summary||{}, c=s.counts||{}, items=s.top_items||[];
  const headline=document.getElementById("executiveHeadline");
  if(!headline)return;
  headline.textContent=s.headline||"サマリー情報がありません";
@@ -151,7 +151,9 @@ function renderExecutiveSummary(){
    const u=String(x.url||""), safe=/^https:\/\//i.test(u)?u:"";
    return '<div class="exec-item"><div class="title">'+esc(x.company)+' · '+esc(x.kind)+'</div>'+
     '<div class="executive-copy">'+(safe?'<a href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a>':esc(x.title))+'</div>'+
-    '<div class="meta">重要度 '+Number(x.risk)+' · 根拠 '+Number(x.evidence_strength)+'/100 · '+esc(x.status)+'</div></div>';
+    '<div class="meta">重要度 '+Number(x.risk)+' · 根拠 '+Number(x.evidence_strength)+'/100 · '+esc(x.status)+'</div>'+
+    (x.plain_explanation?'<div class="executive-copy">'+esc(x.plain_explanation)+'</div>':'')+
+    (x.recommended_action?'<div class="meta"><strong>次に確認：</strong>'+esc(x.recommended_action)+'</div>':'')+'</div>';
   }).join(""):'<div class="meta" style="margin-top:14px">優先候補として表示する情報はありません。</div>';
  document.getElementById("executiveScope").textContent=s.scope_note||"";
 }
@@ -252,6 +254,8 @@ function renderThreatAlerts(){
    '<div class="meta">対象企業: '+esc(x.matched_assets||"—")+'</div>'+
    '<div class="meta">'+esc(x.source)+' · '+esc(x.published||x.detected_at||"")+'</div>'+
    evidenceHtml(x)+
+   '<div class="executive-copy">'+esc(x.plain_explanation||"公開情報の記載を検出。内容と対象企業の関係は原文で確認してください。")+'</div>'+
+   '<div class="meta"><strong>次に確認：</strong>'+esc(x.recommended_action||"原文と企業公式情報を照合してください。")+'</div>'+
    '<div class="meta">'+esc(x.status||"公開情報・未確認")+'</div>'+
    '<div class="meta">'+esc(x.reasons||"")+'</div></div>'+
    '<div class="meta">'+esc(x.detected_at||"")+'</div></div>';

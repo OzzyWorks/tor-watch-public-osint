@@ -91,37 +91,83 @@ def _risk(text):
     return 0,[]
 
 def _risk_near_matches(text, matches, radius=450):
-    """Score incident language only when it appears near a matched organisation."""
+    """Attribute incident terms to the nearest matched organisation, not every
+    organisation that happens to fall inside a broad article window.
+    """
     folded = str(text or "").casefold()
-    best_risk = 0
-    best_reasons = []
-    best_matches = []
+    organisations = []
     for match in matches or []:
         needle = str(match).casefold()
         if not needle:
             continue
         start = 0
-        match_risk = 0
-        match_reasons = []
         while True:
             pos = folded.find(needle, start)
             if pos < 0:
                 break
-            context = folded[max(0, pos - radius):min(len(folded), pos + len(needle) + radius)]
-            risk, reasons = _risk(context)
-            if risk > match_risk:
-                match_risk = risk
-                match_reasons = reasons
+            organisations.append((pos, pos + len(needle), str(match)))
             start = pos + max(1, len(needle))
-        if match_risk > best_risk:
-            best_risk = match_risk
-            best_reasons = match_reasons
-            best_matches = [str(match)]
-        elif match_risk and match_risk == best_risk:
-            best_matches.append(str(match))
-    if best_risk:
-        return best_risk, ["company_context:" + name for name in dict.fromkeys(best_matches)] + best_reasons
-    return 0, ["basis:企業名と近接するインシデント根拠なし"]
+    if not organisations:
+        return 0, ["basis:企業名と近接するインシデント根拠なし"]
+
+    strong_hits = []
+    medium_hits = []
+    for term in THREAT_STRONG:
+        needle = term.casefold()
+        start = 0
+        while True:
+            pos = folded.find(needle, start)
+            if pos < 0:
+                break
+            strong_hits.append((pos, pos + len(needle), term))
+            start = pos + max(1, len(needle))
+    for term in THREAT_MEDIUM:
+        needle = term.casefold()
+        start = 0
+        while True:
+            pos = folded.find(needle, start)
+            if pos < 0:
+                break
+            medium_hits.append((pos, pos + len(needle), term))
+            start = pos + max(1, len(needle))
+
+    attributed = {}
+    for hit_start, hit_end, term in strong_hits + medium_hits:
+        hit_mid = (hit_start + hit_end) // 2
+        nearest = min(
+            organisations,
+            key=lambda item: min(abs(hit_mid - item[0]), abs(hit_mid - item[1]))
+        )
+        distance = min(abs(hit_mid - nearest[0]), abs(hit_mid - nearest[1]))
+        if distance > radius:
+            continue
+        name = nearest[2]
+        bucket = attributed.setdefault(name, {"strong": [], "medium": []})
+        bucket["strong" if (hit_start, hit_end, term) in strong_hits else "medium"].append(term)
+
+    if not attributed:
+        return 0, ["basis:企業名と近接するインシデント根拠なし"]
+
+    scored = []
+    for name, terms in attributed.items():
+        if terms["strong"]:
+            risk = 75
+            reasons = ["incident_term:" + x for x in dict.fromkeys(terms["strong"][:4])]
+        elif terms["medium"]:
+            risk = 55
+            reasons = ["incident_term:" + x for x in dict.fromkeys(terms["medium"][:3])]
+        else:
+            continue
+        scored.append((risk, name, reasons))
+
+    if not scored:
+        return 0, ["basis:企業名と近接するインシデント根拠なし"]
+    best_risk = max(item[0] for item in scored)
+    best = [item for item in scored if item[0] == best_risk]
+    return best_risk, (
+        ["company_context:" + item[1] for item in best]
+        + list(dict.fromkeys(reason for item in best for reason in item[2]))
+    )
 
 def run_public_monitor():
     config_path=CONFIG/"sources.yml"

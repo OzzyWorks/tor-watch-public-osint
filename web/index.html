@@ -303,7 +303,7 @@ function renderPages(){
 }
 document.getElementById("q").addEventListener("input",renderPages);
 
-async function load(){
+async function load(attempt=0){
  const status=document.getElementById("status");
  const retry=document.getElementById("retryLoad");
  const headline=document.getElementById("executiveHeadline");
@@ -330,10 +330,15 @@ async function load(){
   render();
  }catch(e){
   const message=e.name==="AbortError"?"15秒以内に応答がありません。通信またはGitHub Pagesの応答を確認してください。":(e.message||"不明なエラー");
+  if(attempt===0){
+   status.textContent="取得に失敗。一度だけ自動再試行します…";
+   await new Promise(resolve=>setTimeout(resolve,1200));
+   return await load(1);
+  }
   status.textContent="データ取得に失敗";
   headline.textContent="監視データを読み込めませんでした";
   interpretation.textContent=message;
-  action.textContent="通信状態を確認して「再読み込み」を押してください。監視処理の成功・失敗とは別の問題です。";
+  action.textContent="自動再試行も失敗しました。通信状態を確認して「再読み込み」を押してください。監視処理の成功・失敗とは別の問題です。";
   retry.hidden=false;
  }finally{
   clearTimeout(timeout);

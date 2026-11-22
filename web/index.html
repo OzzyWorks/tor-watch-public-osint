@@ -21,6 +21,10 @@
 .exec-count{padding:10px 12px;background:#0b1221;border:1px solid #25334d;border-radius:10px}
 .exec-count strong{display:block;font-size:23px}.exec-count span{font-size:11px;color:#9aa8c2}
 .exec-item{padding:12px 0;border-top:1px solid #293550}
+.change-summary{margin-top:16px;padding-top:14px;border-top:1px solid #293550}
+.change-counts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.change-pill{font-size:12px;background:#0b1221;border:1px solid #293550;border-radius:8px;padding:6px 9px;color:#c4cee0}
+.change-entry{padding:9px 0;border-top:1px solid #222d45;font-size:13px;line-height:1.5}
 @media(max-width:600px){.executive-headline{font-size:18px}.exec-counts{grid-template-columns:repeat(2,1fr)}}
 .health-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;user-select:none}
 .health-disclosure>summary::-webkit-details-marker{display:none}
@@ -132,8 +136,17 @@ function renderExecutiveSummary(){
   ["取得エラー",c.site_errors??0],["企業公式の確認",c.officially_confirmed??0]
  ];
  document.getElementById("executiveCounts").innerHTML=metrics.map(x=>'<div class="exec-count"><strong>'+Number(x[1])+'</strong><span>'+esc(x[0])+'</span></div>').join("");
- const items=s.top_items||[];
- document.getElementById("executiveItems").innerHTML=items.length?
+ const ch=s.changes_24h||{}, cc=ch.counts||{}, changes=ch.items||[];
+ const changeNames=[["new","新規"],["changed","内容更新"],["reclassified","リスク再判定"]];
+ const changeHtml='<div class="change-summary"><div class="title">直近24時間の変化：'+Number(ch.total||0)+'件</div>'+
+  '<div class="change-counts">'+changeNames.map(x=>'<span class="change-pill">'+x[1]+' '+Number(cc[x[0]]||0)+'件</span>').join("")+'</div>'+
+  (changes.length?changes.map(x=>{
+   const u=String(x.url||""), safe=/^https?:\/\//i.test(u)?u:"";
+   return '<div class="change-entry"><strong>'+esc(x.label)+'</strong> · '+esc(x.company)+' · '+esc(x.title)+
+    (safe?' <a href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">原文</a>':'')+
+    '<div class="meta">重要度 '+Number(x.risk)+' · '+esc(x.detected_at||"")+'</div></div>';
+  }).join(""):'<div class="meta">直近24時間に新規・更新・再判定されたイベントはありません。</div>')+'</div>';
+ document.getElementById("executiveItems").innerHTML=changeHtml+(items.length?
   '<div class="meta" style="margin-top:16px;font-weight:700;color:#c4cee0">優先して見る候補</div>'+items.map(x=>{
    const u=String(x.url||""), safe=/^https:\/\//i.test(u)?u:"";
    return '<div class="exec-item"><div class="title">'+esc(x.company)+' · '+esc(x.kind)+'</div>'+

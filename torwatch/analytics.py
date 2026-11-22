@@ -222,6 +222,35 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
         interpretation = "被害がないことの証明ではありません。監視対象・公開情報源・取得できた範囲での結果です。"
         action = "通常監視を継続し、取得エラーがある場合は復旧状況を確認してください。"
 
+    # Summarize meaningful changes observed in the last 24 hours.
+    now = datetime.now(timezone.utc)
+    recent_events = []
+    for event in events:
+        when = _published_datetime(event.get("detected_at"))
+        if when and now - when <= __import__("datetime").timedelta(hours=24) and when <= now:
+            recent_events.append((when, event))
+    event_labels = {
+        "new": "新規ページ検出",
+        "changed": "ページ内容の更新",
+        "reclassified": "リスク判定の変更",
+    }
+    change_counts = {
+        key: sum(1 for _, event in recent_events if event.get("event_type") == key)
+        for key in event_labels
+    }
+    recent_changes = []
+    for when, event in sorted(recent_events, key=lambda pair: pair[0], reverse=True)[:5]:
+        companies = _companies(event.get("reasons"))
+        recent_changes.append({
+            "type": event.get("event_type") or "unknown",
+            "label": event_labels.get(event.get("event_type"), "監視イベント"),
+            "company": "、".join(companies) if companies else "企業名の一致なし",
+            "title": str(event.get("title") or event.get("url") or "タイトルなし"),
+            "url": str(event.get("url") or ""),
+            "risk": int(event.get("risk") or 0),
+            "detected_at": when.isoformat(),
+        })
+
     top_items = []
     for item in sorted(threat_alerts, key=lambda x: int(x.get("risk") or 0), reverse=True):
         if len(top_items) == 3:
@@ -260,5 +289,10 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
             "officially_confirmed": len(confirmed),
         },
         "top_items": top_items,
+        "changes_24h": {
+            "total": len(recent_events),
+            "counts": change_counts,
+            "items": recent_changes,
+        },
         "scope_note": "自動検出・候補抽出です。企業の被害確定には企業公式発表など一次情報による確認が必要です。",
     }

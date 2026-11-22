@@ -74,5 +74,17 @@ class AnalyticsTests(unittest.TestCase):
         self.assertIn("強い脅威シグナル", summary["headline"])
         self.assertEqual(summary["counts"]["site_errors"], 1)
 
+    def test_executive_summary_describes_recent_changes(self):
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        summary = build_executive_summary(
+            [], [{"event_type":"new","url":"https://example.onion/","title":"Example Corp listed",
+                  "risk":78,"reasons":"company:Example Corp","detected_at":now}],
+            [], [], []
+        )
+        self.assertEqual(summary["changes_24h"]["total"], 1)
+        self.assertEqual(summary["changes_24h"]["counts"]["new"], 1)
+        self.assertEqual(summary["changes_24h"]["items"][0]["company"], "Example Corp")
+
 if __name__ == "__main__":
     unittest.main()

@@ -52,7 +52,7 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div class="wrap">
 <header class="header">
 <div><div class="brand">🛡️ TOR WATCH</div><div class="sub">PUBLIC OSINT MONITOR · 公開.onion + 企業関連RSS</div></div>
-<div class="status" id="status">データ読み込み中…</div>
+<div><span class="status" id="status" role="status" aria-live="polite">データ読み込み中…</span> <button id="retryLoad" type="button" hidden onclick="load()">再読み込み</button></div>
 </header>
 
 <section class="panel executive" id="executiveSummary">
@@ -304,11 +304,40 @@ function renderPages(){
 document.getElementById("q").addEventListener("input",renderPages);
 
 async function load(){
+ const status=document.getElementById("status");
+ const retry=document.getElementById("retryLoad");
+ const headline=document.getElementById("executiveHeadline");
+ const interpretation=document.getElementById("executiveInterpretation");
+ const action=document.getElementById("executiveAction");
+ retry.hidden=true;
+ status.textContent="データ読み込み中…";
+ headline.textContent="サマリーを読み込み中…";
+ interpretation.textContent="";
+ action.textContent="";
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),15000);
  try{
-  const r=await fetch("data.json?ts="+Date.now()); DATA=await r.json();
-  document.getElementById("status").textContent="最終更新 "+new Date(DATA.updated_at).toLocaleString("ja-JP");
+  const url=new URL("data.json",window.location.href);
+  url.searchParams.set("ts",String(Date.now()));
+  const r=await fetch(url.toString(),{cache:"no-store",signal:controller.signal});
+  if(!r.ok)throw new Error("データファイルの取得に失敗しました (HTTP "+r.status+")");
+  const next=await r.json();
+  if(!next||!Array.isArray(next.pages)||!Array.isArray(next.events)||!next.updated_at){
+   throw new Error("データ形式が不正、または未生成です");
+  }
+  DATA=next;
+  status.textContent="最終更新 "+new Date(DATA.updated_at).toLocaleString("ja-JP");
   render();
- }catch(e){document.getElementById("status").textContent="データ取得エラー"}
+ }catch(e){
+  const message=e.name==="AbortError"?"15秒以内に応答がありません。通信またはGitHub Pagesの応答を確認してください。":(e.message||"不明なエラー");
+  status.textContent="データ取得に失敗";
+  headline.textContent="監視データを読み込めませんでした";
+  interpretation.textContent=message;
+  action.textContent="通信状態を確認して「再読み込み」を押してください。監視処理の成功・失敗とは別の問題です。";
+  retry.hidden=false;
+ }finally{
+  clearTimeout(timeout);
+ }
 }
 load();
 </script>

@@ -145,6 +145,41 @@ class ThreatIntelTests(unittest.TestCase):
         risk,_=score("database leak customer employee credit card",[],{"names":["Sekisui House"]})
         self.assertLess(risk,70)
 
+
+    def test_japanese_company_name_requires_nearby_breach_and_data_context(self):
+        name_only = "株式会社日立製作所が新サービスを発表しました。"
+        risk, reasons = score(name_only, [], {"names": ["株式会社日立製作所"]})
+        self.assertEqual(risk, 20)
+        self.assertIn("company:株式会社日立製作所", reasons)
+
+        incident = "株式会社日立製作所 ランサムウェア攻撃により顧客情報と従業員情報が流出したと主張"
+        risk, reasons = score(incident, [], {"names": ["株式会社日立製作所"]})
+        self.assertEqual(risk, 90)
+        self.assertIn("company:株式会社日立製作所", reasons)
+        self.assertTrue(any(x.startswith("nearby_breach:") for x in reasons))
+        self.assertTrue(any(x.startswith("nearby_data:") for x in reasons))
+
+    def test_rss_japanese_multi_company_article_attributes_incident_only_to_nearby_company(self):
+        article = (
+            "ソニーグループ株式会社は新製品を発表しました。"
+            + ("通常の企業ニュースです。" * 30)
+            + "株式会社日立製作所でランサムウェアによる情報漏えいが発生したと報じられました。"
+        )
+        risk, reasons = _risk_near_matches(
+            article, ["ソニーグループ株式会社", "株式会社日立製作所"]
+        )
+        self.assertEqual(risk, 75)
+        self.assertIn("company_context:株式会社日立製作所", reasons)
+        self.assertNotIn("company_context:ソニーグループ株式会社", reasons)
+
+    def test_rss_company_name_without_incident_language_is_not_alerted(self):
+        article = "株式会社DTSは新しい人事制度を発表しました。業績説明会を開催します。"
+        matches = _matches(article, {"names": ["株式会社DTS"]})
+        self.assertEqual(matches, ["株式会社DTS"])
+        risk, reasons = _risk_near_matches(article, matches)
+        self.assertEqual(risk, 0)
+        self.assertNotIn("company_context:株式会社DTS", reasons)
+
     def test_detail_crawler_only_follows_same_host_html_links(self):
         html = """<html><body>
         <a href="/post/123">Victim announcement</a>

@@ -97,7 +97,7 @@ def build_company_timeline(events, threat_alerts, max_items=8):
         url = str(alert.get("url") or "")
         source = str(alert.get("source") or (urlparse(url).hostname or "公開情報"))
         for company in dict.fromkeys(str(x).strip() for x in companies if str(x).strip()):
-            normalized = re.sub(r"[^a-z0-9\\u3040-\\u30ff\\u3400-\\u9fff]+", "", title.casefold())
+            normalized = re.sub(r"[^a-z0-9\u3040-\u30ff\u3400-\u9fff]+", "", title.casefold())
             fingerprint = ("public", normalized or url)
             add(company, {
                 "company": company, "type": "public_report",

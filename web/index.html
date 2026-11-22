@@ -222,7 +222,7 @@ function renderCompanyTimeline(){
  if(!host)return;
  host.innerHTML=groups.slice(0,50).map(g=>{
    const items=(g.items||[]).map(x=>{
-     const links=(x.urls||[]).filter(u=>/^https?:\\/\\//i.test(u)).map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+(i===0?'原文':'別掲載')+'</a>').join(' · ');
+     const links=(x.urls||[]).filter(u=>/^https?:\/\//i.test(u)).map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+(i===0?'原文':'別掲載')+'</a>').join(' · ');
      return '<div class="change-entry"><strong>'+esc(x.label)+'</strong> · '+esc(x.date||'')+
        '<div class="title">'+esc(x.title)+'</div><div class="meta">'+esc((x.sources||[]).join(' / '))+
        (links?' · '+links:'')+'</div><div class="meta">'+esc(x.note||'')+'</div></div>';
@@ -238,7 +238,7 @@ function renderCompanyRadar(){
  host.innerHTML=items.map(x=>{
    const l=level(x.max_risk);
    return '<div class="row"><div><div class="title">'+esc(x.company)+'</div><div class="meta">監視ページ '+x.monitored_pages+' · 高リスク '+x.high_risk_pages+'</div></div>'+
-   '<div><span class="badge '+l[1]+'">'+l[0]+' '+x.max_risk+'</span></div>'+
+   '<div><span class="badge '+l[1]+'">監視ページ '+l[0]+' '+x.max_risk+'</span></div>'+
    '<div class="meta">検知イベント '+x.event_count+' · 公開報道 '+x.public_reports+'</div>'+
    '<div class="meta">最終確認 '+esc(x.last_seen||"—")+'</div></div>';
  }).join("")||'<div class="empty">企業名に一致した監視記録はまだありません。</div>';

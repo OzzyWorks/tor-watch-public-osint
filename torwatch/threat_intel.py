@@ -90,7 +90,7 @@ def _risk(text):
         return 55,["incident_term:"+x for x in medium[:3]]
     return 0,[]
 
-def _risk_near_matches(text, matches, radius=1200):
+def _risk_near_matches(text, matches, radius=450):
     """Score incident language only when it appears near a matched organisation."""
     folded = str(text or "").casefold()
     best_risk = 0

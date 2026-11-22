@@ -52,6 +52,17 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertEqual(risk, 75)
         self.assertIn("company_context:Sony Group Corporation", reasons)
 
+    def test_rss_risk_ignores_incident_terms_far_from_company_name(self):
+        far = "DTS Corporation " + ("ordinary corporate profile " * 25) + " unrelated ransomware data breach"
+        risk, reasons = _risk_near_matches(far, ["DTS Corporation"])
+        self.assertEqual(risk, 0)
+        self.assertNotIn("company_context:DTS Corporation", reasons)
+
+        near = "DTS Corporation " + ("ordinary corporate profile " * 5) + " ransomware data breach"
+        risk, reasons = _risk_near_matches(near, ["DTS Corporation"])
+        self.assertEqual(risk, 75)
+        self.assertIn("company_context:DTS Corporation", reasons)
+
     def test_rss_risk_is_attributed_only_to_company_near_incident_terms(self):
         text = (
             "Sony Group Corporation "

@@ -38,13 +38,19 @@ def build_company_radar(pages, events, threat_alerts):
         for company in _companies(event.get("reasons")):
             if company in stats:
                 stats[company]["event_count"] += 1
+    report_keys = defaultdict(set)
     for alert in threat_alerts:
         raw = alert.get("matched_assets") or ""
         companies = raw if isinstance(raw, list) else str(raw).split(" | ")
+        title = re.sub(r"[^a-z0-9\\u3040-\\u30ff\\u3400-\\u9fff]+", "", str(alert.get("title") or "").casefold())
+        url = str(alert.get("url") or "")
+        fingerprint = title or url
         for company in companies:
             company = str(company).strip()
-            if company in stats:
-                stats[company]["public_reports"] += 1
+            if company in stats and fingerprint:
+                report_keys[company].add(fingerprint)
+    for company, fingerprints in report_keys.items():
+        stats[company]["public_reports"] = len(fingerprints)
     for item in stats.values():
         item["risk_level"] = _level(item["max_risk"])
     return sorted(stats.values(), key=lambda x: (-x["max_risk"], -x["event_count"], x["company"]))
@@ -59,12 +65,22 @@ def build_company_timeline(events, threat_alerts, max_items=8):
         if not company:
             return
         previous = grouped[company].get(fingerprint)
-        if previous is None or record["when"] > previous["when"]:
+        if previous is None:
             grouped[company][fingerprint] = record
-        elif record.get("url") and record["url"] not in previous["urls"]:
-            previous["urls"].append(record["url"])
-            if record.get("source") and record["source"] not in previous["sources"]:
-                previous["sources"].append(record["source"])
+            return
+        # Merge syndication links even when one copy has a later timestamp.
+        for url in record.get("urls", []):
+            if url and url not in previous["urls"]:
+                previous["urls"].append(url)
+        for source in record.get("sources", []):
+            if source and source not in previous["sources"]:
+                previous["sources"].append(source)
+        if record["when"] > previous["when"]:
+            merged_urls = previous["urls"]
+            merged_sources = previous["sources"]
+            grouped[company][fingerprint] = record
+            grouped[company][fingerprint]["urls"] = merged_urls
+            grouped[company][fingerprint]["sources"] = merged_sources
 
     for event in events or []:
         kind = str(event.get("event_type") or "")

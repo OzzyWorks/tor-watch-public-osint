@@ -15,6 +15,16 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(result[0]["max_risk"], 75)
         self.assertEqual(result[0]["event_count"], 1)
 
+    def test_company_radar_deduplicates_same_public_headline(self):
+        pages=[{"url":"http://a.onion/","risk":50,"reasons":"company:Example Corp","checked_at":"2026-11-22"}]
+        alerts=[
+            {"matched_assets":"Example Corp","title":"Example Corp ransomware incident","url":"https://news-a.example/a"},
+            {"matched_assets":"Example Corp","title":"Example Corp ransomware incident","url":"https://news-b.example/b"},
+            {"matched_assets":"Example Corp","title":"A different Example Corp data breach","url":"https://news-c.example/c"},
+        ]
+        result=build_company_radar(pages,[],alerts)
+        self.assertEqual(result[0]["public_reports"],2)
+
     def test_group_activity_counts_distinct_changed_pages(self):
         groups = [{"name":"Example Group","hosts":["a.onion","b.onion"]}]
         pages = [

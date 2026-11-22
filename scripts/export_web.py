@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import yaml
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary
 from torwatch.risk import assess_evidence
 
 DB=Path("data/history.db")
@@ -70,10 +70,12 @@ if DB.exists():
 group_config=yaml.safe_load(GROUPS.read_text(encoding="utf-8")) if GROUPS.exists() else {"groups":[]}
 company_radar=build_company_radar(pages,events,threat_alerts)
 group_activity=build_group_activity(pages,events,group_config.get("groups",[]))
+incident_correlations=build_incident_correlations(threat_alerts)
+executive_summary=build_executive_summary(pages,events,threat_alerts,site_health,incident_correlations)
 OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity,
-    "incident_correlations":build_incident_correlations(threat_alerts)
+    "incident_correlations":incident_correlations,"executive_summary":executive_summary
 },ensure_ascii=False,indent=2),encoding="utf-8")

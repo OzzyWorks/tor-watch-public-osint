@@ -1,5 +1,5 @@
 import unittest
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary
 
 
 class AnalyticsTests(unittest.TestCase):
@@ -57,6 +57,22 @@ class AnalyticsTests(unittest.TestCase):
             {"matched_assets":"Example Corp","title":"Example Corp ransomware attack","url":"https://news-b.example/b","risk":75,"published":"2026-11-20","reasons":"ransomware"},
         ]
         self.assertEqual(build_incident_correlations(alerts), [])
+
+
+    def test_executive_summary_explains_critical_findings_without_claiming_confirmation(self):
+        summary = build_executive_summary(
+            [{"risk":90,"title":"Example leak page","companies":["Example Corp"],"evidence_strength":75}],
+            [], [], [], []
+        )
+        self.assertIn("CRITICAL判定", summary["headline"])
+        self.assertEqual(summary["counts"]["critical_pages"], 1)
+        self.assertEqual(summary["counts"]["officially_confirmed"], 0)
+        self.assertEqual(summary["top_items"][0]["company"], "Example Corp")
+
+    def test_executive_summary_reports_quiet_state_and_collection_errors(self):
+        summary = build_executive_summary([], [], [], [{"status":"error"}], [])
+        self.assertIn("強い脅威シグナル", summary["headline"])
+        self.assertEqual(summary["counts"]["site_errors"], 1)
 
 if __name__ == "__main__":
     unittest.main()

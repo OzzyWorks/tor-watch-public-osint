@@ -13,6 +13,15 @@
 .card,.panel{background:#121827;border:1px solid #222d45;border-radius:15px}.card{padding:18px}.num{font-size:32px;font-weight:850;margin-top:5px}
 .red{color:#ff7380}.warning{color:#ffc568}.orange{color:#ffc568}.green{color:#6ed9a0}.blue{color:#7cb8ff}
 .panel{padding:20px;margin-bottom:18px}.panel h2{font-size:16px;margin:0 0 15px}
+.executive{border-color:#3b4b69;background:#172238}
+.executive-headline{font-size:21px;font-weight:850;line-height:1.45;margin:4px 0 10px}
+.executive-copy{font-size:14px;line-height:1.7;color:#c4cee0}
+.executive-action{margin-top:12px;padding:12px 14px;border-left:3px solid #7cb8ff;background:#0d1729;border-radius:7px;font-size:13px;line-height:1.6}
+.exec-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.exec-count{padding:10px 12px;background:#0b1221;border:1px solid #25334d;border-radius:10px}
+.exec-count strong{display:block;font-size:23px}.exec-count span{font-size:11px;color:#9aa8c2}
+.exec-item{padding:12px 0;border-top:1px solid #293550}
+@media(max-width:600px){.executive-headline{font-size:18px}.exec-counts{grid-template-columns:repeat(2,1fr)}}
 .health-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;user-select:none}
 .health-disclosure>summary::-webkit-details-marker{display:none}
 .health-disclosure>summary h2{margin:0}
@@ -42,6 +51,15 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div class="status" id="status">データ読み込み中…</div>
 </header>
 
+<section class="panel executive" id="executiveSummary">
+<div class="sub">まず結論 · 自動監視の現状を人が判断しやすい形に要約</div>
+<div id="executiveHeadline" class="executive-headline">サマリーを読み込み中…</div>
+<div id="executiveInterpretation" class="executive-copy"></div>
+<div id="executiveAction" class="executive-action"></div>
+<div id="executiveCounts" class="exec-counts"></div>
+<div id="executiveItems"></div>
+<div id="executiveScope" class="meta"></div>
+</section>
 <section class="cards" id="cards"></section>
 
 <section class="panel">
@@ -100,8 +118,34 @@ const readableReason=s=>{
 const reasonLines=x=>(x.reason_items||String(x.reasons||"").split(" | ")).map(readableReason);
 const evidenceHtml=x=>'<div class="meta">根拠の充実度: '+esc(x.evidence_label||"未評価")+' ('+Number(x.evidence_strength||0)+'/100) · '+esc(x.evidence_status||"被害未確認")+'</div><div class="meta">※自動判定。企業公式の被害確認を意味しません。</div>';
 
+
+function renderExecutiveSummary(){
+ const s=DATA.executive_summary||{}, c=s.counts||{};
+ const headline=document.getElementById("executiveHeadline");
+ if(!headline)return;
+ headline.textContent=s.headline||"サマリー情報がありません";
+ document.getElementById("executiveInterpretation").textContent=s.interpretation||"集計情報を取得できませんでした。";
+ document.getElementById("executiveAction").innerHTML="<strong>次に確認すること：</strong> "+esc(s.priority_action||"監視を継続してください");
+ const metrics=[
+  ["CRITICAL監視ページ",c.critical_pages??0],["HIGH監視ページ",c.high_pages??0],
+  ["公開情報アラート",c.public_reports??0],["複数媒体の候補",c.multi_source_candidates??0],
+  ["取得エラー",c.site_errors??0],["企業公式の確認",c.officially_confirmed??0]
+ ];
+ document.getElementById("executiveCounts").innerHTML=metrics.map(x=>'<div class="exec-count"><strong>'+Number(x[1])+'</strong><span>'+esc(x[0])+'</span></div>').join("");
+ const items=s.top_items||[];
+ document.getElementById("executiveItems").innerHTML=items.length?
+  '<div class="meta" style="margin-top:16px;font-weight:700;color:#c4cee0">優先して見る候補</div>'+items.map(x=>{
+   const u=String(x.url||""), safe=/^https:\/\//i.test(u)?u:"";
+   return '<div class="exec-item"><div class="title">'+esc(x.company)+' · '+esc(x.kind)+'</div>'+
+    '<div class="executive-copy">'+(safe?'<a href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a>':esc(x.title))+'</div>'+
+    '<div class="meta">重要度 '+Number(x.risk)+' · 根拠 '+Number(x.evidence_strength)+'/100 · '+esc(x.status)+'</div></div>';
+  }).join(""):'<div class="meta" style="margin-top:14px">優先候補として表示する情報はありません。</div>';
+ document.getElementById("executiveScope").textContent=s.scope_note||"";
+}
+
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
+ renderExecutiveSummary();
  renderThreatAlerts();
  renderIncidentCorrelations();
  renderCompanyRadar();

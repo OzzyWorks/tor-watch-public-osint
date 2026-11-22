@@ -42,7 +42,7 @@ def build_company_radar(pages, events, threat_alerts):
     for alert in threat_alerts:
         raw = alert.get("matched_assets") or ""
         companies = raw if isinstance(raw, list) else str(raw).split(" | ")
-        title = re.sub(r"[^a-z0-9\\u3040-\\u30ff\\u3400-\\u9fff]+", "", str(alert.get("title") or "").casefold())
+        title = re.sub(r"[^a-z0-9\u3040-\u30ff\u3400-\u9fff]+", "", str(alert.get("title") or "").casefold())
         url = str(alert.get("url") or "")
         fingerprint = title or url
         for company in companies:

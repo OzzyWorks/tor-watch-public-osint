@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import yaml
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert
 from torwatch.risk import assess_evidence
 
 DB=Path("data/history.db")
@@ -50,6 +50,7 @@ if DB.exists():
         rows=con.execute("""SELECT id,source,title,url,published,matched_assets,risk,reasons,status,detected_at
             FROM threat_items ORDER BY detected_at DESC LIMIT 200""").fetchall()
         threat_alerts=[{**dict(r),**assess_evidence(str(r["reasons"] or "").split(" | "), "public_report")} for r in rows]
+        threat_alerts=[{**item,**explain_public_alert(item)} for item in threat_alerts]
     except sqlite3.OperationalError:
         pass
     try:

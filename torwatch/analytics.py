@@ -192,6 +192,38 @@ def build_incident_correlations(threat_alerts, max_days=30, min_similarity=0.25)
     return sorted(output, key=lambda x: (-x["source_count"], -x["max_risk"], x["company"]))
 
 
+
+def explain_public_alert(alert):
+    """Translate a public-feed match into a cautious, actionable Japanese explanation."""
+    strength = int(alert.get("evidence_strength") or 0)
+    raw_assets = alert.get("matched_assets") or ""
+    companies = raw_assets if isinstance(raw_assets, list) else str(raw_assets).split(" | ")
+    company = "、".join(dict.fromkeys(str(x).strip() for x in companies if str(x).strip()))
+    if strength <= 0:
+        level = "関連未確認"
+        explanation = "監視対象企業との一致を確認できていません。記事は参考情報で、対象企業の事案とは判断できません。"
+        action = "企業別アラートとしては扱わず、必要なら記事の原文で対象企業を確認してください。"
+    elif strength <= 15:
+        level = "低・企業名一致のみ"
+        explanation = "記事に企業名が登場した段階です。漏洩・侵害を示す具体的な記載は検出されていません。"
+        action = "原文の文脈を確認。企業名が別文脈で使われているだけなら対応不要です。"
+    elif strength <= 40:
+        level = "限定的・情報記載あり"
+        explanation = "企業名の近くに情報種別やデータ量の記載がありますが、漏洩・侵害を裏付ける内容とは限りません。"
+        action = "原文で企業名と情報記載の関係を確認し、具体的な漏洩主張があるかを見ます。"
+    else:
+        level = "要確認・侵害関連の記載"
+        explanation = "企業名の近くに漏洩・侵害関連の記載があります。公開情報源の記事・主張を検出したもので、実被害や情報流出の確定ではありません。"
+        action = "記事の原典と公表日時を確認し、企業公式のお知らせ・適時開示・注意喚起と照合してください。"
+    return {
+        "matched_company_text": company or "企業名の一致なし",
+        "attention_level": level,
+        "plain_explanation": explanation,
+        "recommended_action": action,
+        "official_confirmation_note": "企業公式の被害確認は未確認",
+    }
+
+
 def build_executive_summary(pages, events, threat_alerts, site_health, correlations):
     """Create a concise, plain-language operational summary."""
     pages = pages or []
@@ -263,6 +295,7 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
             "evidence_strength": int(item.get("evidence_strength") or 0),
             "url": str(item.get("url") or ""),
             "status": str(item.get("evidence_status") or "公式確認なし"),
+            **explain_public_alert(item),
         })
     for item in sorted(pages, key=lambda x: int(x.get("risk") or 0), reverse=True):
         if len(top_items) == 3:

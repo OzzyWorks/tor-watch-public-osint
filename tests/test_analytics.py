@@ -1,5 +1,5 @@
 import unittest
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary
+from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert
 
 
 class AnalyticsTests(unittest.TestCase):
@@ -58,6 +58,16 @@ class AnalyticsTests(unittest.TestCase):
         ]
         self.assertEqual(build_incident_correlations(alerts), [])
 
+
+    def test_public_alert_explanation_distinguishes_name_match_from_breach_claim(self):
+        name_only = explain_public_alert({"matched_assets":"Example Corp","evidence_strength":15})
+        self.assertIn("企業名が登場", name_only["plain_explanation"])
+        self.assertIn("対応不要", name_only["recommended_action"])
+        breach = explain_public_alert({"matched_assets":"Example Corp","evidence_strength":75})
+        self.assertIn("漏洩・侵害関連", breach["plain_explanation"])
+        self.assertIn("確定ではありません", breach["plain_explanation"])
+        self.assertIn("企業公式", breach["recommended_action"])
+        self.assertEqual(breach["matched_company_text"], "Example Corp")
 
     def test_executive_summary_explains_critical_findings_without_claiming_confirmation(self):
         summary = build_executive_summary(

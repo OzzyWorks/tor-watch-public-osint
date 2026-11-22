@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import yaml
-from torwatch.analytics import build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
+from torwatch.analytics import classify_site_recovery, build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 from torwatch.risk import assess_evidence
 
 DB=Path("data/history.db")
@@ -64,6 +64,7 @@ if DB.exists():
                 FROM site_check_history WHERE url=?
                 ORDER BY checked_at DESC LIMIT 6""",(item["url"],)).fetchall()
             item["history"]=[dict(x) for x in history]
+            item.update(classify_site_recovery(item))
     except sqlite3.OperationalError:
         pass
     con.close()

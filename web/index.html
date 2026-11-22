@@ -210,12 +210,14 @@ function renderSiteHealth(){
    const checked=x.checked_at?new Date(x.checked_at).toLocaleString("ja-JP"):"—";
    const lastSuccess=x.last_success_at?new Date(x.last_success_at).toLocaleString("ja-JP"):"成功履歴なし";
    const detail=failed?'<details><summary>'+esc(errorTypeLabel(x.error_type))+' · 詳細</summary><div>'+esc(x.error||"詳細なし")+'</div></details>':"HTML取得成功";
+   const recoveryLabel=x.recovery_label|| (failed?"状態判定なし":"正常");
+   const recoveryNote=x.recovery_note||"";
    const history=(x.history||[]).slice(0,6);
    const historyHtml=history.length?'<div class="history-dots" aria-label="直近の取得履歴">'+history.map(h=>'<span class="history-dot '+(h.status==="ok"?"ok":"error")+'" title="'+esc(h.checked_at)+' · '+(h.status==="ok"?"成功":esc(errorTypeLabel(h.error_type)))+'"></span>').join("")+'</div><div class="meta">直近'+history.length+'回：'+history.filter(h=>h.status==="ok").length+'成功 / '+history.filter(h=>h.status!=="ok").length+'失敗（左が最新）</div>':'';
    return '<div class="health-row"><div><div class="title">'+esc(x.title||x.url)+'</div><div class="meta">'+esc(x.url)+'</div></div>'+
      '<div><span class="badge '+(failed?"unavailable":"normal")+'">'+(failed?"取得エラー":"取得成功")+'</span></div>'+
      '<div class="meta">最終確認 '+esc(checked)+'<br>最終成功 '+esc(lastSuccess)+'<br>'+(failed?"連続失敗 "+(x.consecutive_errors||0)+"回":"連続失敗なし")+'</div>'+
-     '<div class="meta">'+detail+historyHtml+'</div></div>';
+     '<div class="meta"><strong>'+esc(recoveryLabel)+'</strong><br>'+esc(recoveryNote)+'<br>'+detail+historyHtml+'</div></div>';
  }).join("")||'<div class="empty">取得状況の記録がありません。</div>';
 }
 function renderCompanyTimeline(){

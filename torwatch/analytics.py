@@ -311,6 +311,24 @@ def explain_public_alert(alert):
     }
 
 
+
+
+def classify_site_recovery(item):
+    """Classify collection health from the latest check and recent history."""
+    history = item.get("history") or []
+    statuses = [str(x.get("status") or "") for x in history]
+    consecutive = int(item.get("consecutive_errors") or 0)
+    if item.get("status") == "ok":
+        if "error" in statuses:
+            return {"recovery_state": "recovered", "recovery_label": "復旧確認", "recovery_note": "直近の取得は成功。過去の履歴に失敗があります。"}
+        return {"recovery_state": "healthy", "recovery_label": "正常", "recovery_note": "直近の取得は成功しています。"}
+    if consecutive >= 3:
+        return {"recovery_state": "persistent_failure", "recovery_label": "継続障害", "recovery_note": f"連続{consecutive}回失敗。複数回続いているため継続障害として要確認です。"}
+    if "ok" in statuses:
+        return {"recovery_state": "intermittent", "recovery_label": "断続的な失敗", "recovery_note": "成功と失敗が混在しています。経路・接続先の一時的不安定の可能性があります。"}
+    return {"recovery_state": "new_failure", "recovery_label": "今回失敗", "recovery_note": "失敗回数が少なく、継続障害とはまだ判定できません。"}
+
+
 def build_executive_summary(pages, events, threat_alerts, site_health, correlations):
     """Create a concise, plain-language operational summary."""
     pages = pages or []

@@ -105,6 +105,13 @@ class SiteHealthTests(unittest.TestCase):
         self.assertEqual(recovered["error"], "")
         self.assertEqual(recovered["last_success_at"], recovered["checked_at"])
 
+    def test_recovery_classification_distinguishes_transient_persistent_and_recovered(self):
+        from torwatch.analytics import classify_site_recovery
+        self.assertEqual(classify_site_recovery({"status":"error","consecutive_errors":1,"history":[{"status":"error"}]})["recovery_state"], "new_failure")
+        self.assertEqual(classify_site_recovery({"status":"error","consecutive_errors":4,"history":[{"status":"error"}]})["recovery_state"], "persistent_failure")
+        self.assertEqual(classify_site_recovery({"status":"error","consecutive_errors":2,"history":[{"status":"error"},{"status":"ok"}]})["recovery_state"], "intermittent")
+        self.assertEqual(classify_site_recovery({"status":"ok","consecutive_errors":0,"history":[{"status":"ok"},{"status":"error"}]})["recovery_state"], "recovered")
+
 
 if __name__ == "__main__":
     unittest.main()

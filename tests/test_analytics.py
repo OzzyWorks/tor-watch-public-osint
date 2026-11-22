@@ -167,5 +167,16 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(counts["contextual_matches"], 1)
         self.assertEqual(counts["incident_related_mentions"], 1)
 
+    def test_evidence_strength_classification_boundaries_are_explicit(self):
+        from torwatch.analytics import build_executive_summary
+        summary = build_executive_summary([], [], [
+            {"matched_assets":"A Corp","evidence_strength":15},
+            {"matched_assets":"B Corp","evidence_strength":40},
+            {"matched_assets":"C Corp","evidence_strength":41},
+        ], [], [])
+        self.assertEqual(summary["counts"]["name_only_matches"], 1)
+        self.assertEqual(summary["counts"]["contextual_matches"], 1)
+        self.assertEqual(summary["counts"]["incident_related_mentions"], 1)
+
 if __name__ == "__main__":
     unittest.main()

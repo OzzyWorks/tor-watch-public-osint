@@ -74,5 +74,6 @@ OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
-    "company_radar":company_radar,"group_activity":group_activity,\n    "incident_correlations":build_incident_correlations(threat_alerts)
+    "company_radar":company_radar,"group_activity":group_activity,
+    "incident_correlations":build_incident_correlations(threat_alerts)
 },ensure_ascii=False,indent=2),encoding="utf-8")

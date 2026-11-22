@@ -103,6 +103,7 @@ const evidenceHtml=x=>'<div class="meta">根拠の充実度: '+esc(x.evidence_la
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
  renderThreatAlerts();
+ renderIncidentCorrelations();
  renderCompanyRadar();
  renderGroupActivity();
  renderSiteHealth();
@@ -180,7 +181,8 @@ function renderIncidentCorrelations(){
    '<div class="meta">'+esc(x.latest||"")+'</div><div style="grid-column:1/-1">'+links+'<div class="meta">※ '+esc(x.caveat)+'</div></div></div>';
  }).join("")||'<div class="empty">複数ドメインで照合できた企業インシデント候補はありません。</div>';
 }
-\nfunction renderThreatAlerts(){
+
+function renderThreatAlerts(){
  const items=DATA.threat_alerts||[];
  const host=document.getElementById("threatAlerts");
  if(!host)return;

@@ -370,24 +370,12 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
             "detected_at": when.isoformat(),
         })
 
-    top_items = []
-    for item in sorted(threat_alerts, key=lambda x: int(x.get("risk") or 0), reverse=True):
-        if len(top_items) == 3:
-            break
-        top_items.append({
-            "kind": "公開報道・情報",
-            "company": str(item.get("matched_assets") or "企業名の一致なし"),
-            "title": str(item.get("title") or "タイトルなし"),
-            "risk": int(item.get("risk") or 0),
-            "evidence_strength": int(item.get("evidence_strength") or 0),
-            "url": str(item.get("url") or ""),
-            "status": str(item.get("evidence_status") or "公式確認なし"),
-            **explain_public_alert(item),
-        })
-    for item in sorted(pages, key=lambda x: int(x.get("risk") or 0), reverse=True):
-        if len(top_items) == 3:
-            break
-        top_items.append({
+    # Rank all candidate types together so the headline's most serious finding
+    # is also the first item the operator sees. Public-feed risk scores are not
+    # directly comparable to leak-page scores, so use evidence strength there.
+    candidates = []
+    for item in pages:
+        candidates.append({
             "kind": "公開リークサイト監視",
             "company": "、".join(item.get("companies") or []) or "企業名の一致なし",
             "title": str(item.get("title") or item.get("url") or "タイトルなし"),
@@ -395,7 +383,29 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
             "evidence_strength": int(item.get("evidence_strength") or 0),
             "url": str(item.get("url") or ""),
             "status": str(item.get("evidence_status") or "企業公式の確認なし"),
+            "priority": 1000 + int(item.get("risk") or 0),
         })
+    for item in threat_alerts:
+        explanation = explain_public_alert(item)
+        strength = int(item.get("evidence_strength") or 0)
+        candidates.append({
+            "kind": "公開報道・情報",
+            "company": str(item.get("matched_assets") or "企業名の一致なし"),
+            "title": str(item.get("title") or "タイトルなし"),
+            "risk": int(item.get("risk") or 0),
+            "evidence_strength": strength,
+            "url": str(item.get("url") or ""),
+            "status": str(item.get("evidence_status") or "公式確認なし"),
+            **explanation,
+            "priority": strength,
+        })
+    top_items = sorted(
+        candidates,
+        key=lambda x: (x["priority"], x["evidence_strength"], x["risk"]),
+        reverse=True,
+    )[:3]
+    for item in top_items:
+        item.pop("priority", None)
     return {
         "headline": headline,
         "interpretation": interpretation,

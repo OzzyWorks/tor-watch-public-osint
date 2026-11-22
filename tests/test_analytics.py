@@ -129,5 +129,26 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(summary["changes_24h"]["counts"]["new"], 1)
         self.assertEqual(summary["changes_24h"]["items"][0]["company"], "Example Corp")
 
+    def test_executive_summary_prioritizes_critical_page_over_public_feed_noise(self):
+        summary = build_executive_summary(
+            [{"risk":92,"title":"Critical leak listing","url":"http://critical.onion/",
+              "companies":["Example Corp"],"evidence_strength":90}],
+            [],
+            [
+                {"matched_assets":"Example Corp","title":"Company mentioned in general article",
+                 "url":"https://news.example/a","risk":99,"evidence_strength":10,
+                 "evidence_status":"企業名一致のみ"},
+                {"matched_assets":"Example Corp","title":"Another unrelated mention",
+                 "url":"https://news.example/b","risk":95,"evidence_strength":5,
+                 "evidence_status":"企業名一致のみ"},
+                {"matched_assets":"Example Corp","title":"Third unrelated mention",
+                 "url":"https://news.example/c","risk":90,"evidence_strength":0,
+                 "evidence_status":"関連未確認"},
+            ],
+            [], []
+        )
+        self.assertEqual(summary["top_items"][0]["kind"], "公開リークサイト監視")
+        self.assertEqual(summary["top_items"][0]["title"], "Critical leak listing")
+
 if __name__ == "__main__":
     unittest.main()

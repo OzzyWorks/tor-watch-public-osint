@@ -150,5 +150,22 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(summary["top_items"][0]["kind"], "公開リークサイト監視")
         self.assertEqual(summary["top_items"][0]["title"], "Critical leak listing")
 
+
+    def test_executive_summary_separates_name_only_from_incident_evidence(self):
+        summary = build_executive_summary(
+            [], [], [
+                {"matched_assets": "Example Corp", "title": "Company mentioned",
+                 "risk": 90, "evidence_strength": 10},
+                {"matched_assets": "Example Corp", "title": "Company and data size",
+                 "risk": 70, "evidence_strength": 30},
+                {"matched_assets": "Example Corp", "title": "Company breach report",
+                 "risk": 80, "evidence_strength": 65},
+            ], [], []
+        )
+        counts = summary["counts"]
+        self.assertEqual(counts["name_only_matches"], 1)
+        self.assertEqual(counts["contextual_matches"], 1)
+        self.assertEqual(counts["incident_related_mentions"], 1)
+
 if __name__ == "__main__":
     unittest.main()

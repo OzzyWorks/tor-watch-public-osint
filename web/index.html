@@ -145,7 +145,9 @@ function renderExecutiveSummary(){
  const metrics=[
   ["CRITICAL監視ページ",c.critical_pages??0],["HIGH監視ページ",c.high_pages??0],
   ["公開情報アラート",c.public_reports??0],["複数媒体の候補",c.multi_source_candidates??0],
-  ["取得エラー",c.site_errors??0],["企業公式の確認",c.officially_confirmed??0]
+  ["取得エラー",c.site_errors??0],["企業公式の確認",c.officially_confirmed??0],
+  ["企業名一致のみ",c.name_only_matches??0],["周辺情報あり",c.contextual_matches??0],
+  ["侵害関連語あり",c.incident_related_mentions??0]
  ];
  document.getElementById("executiveCounts").innerHTML=metrics.map(x=>'<div class="exec-count"><strong>'+Number(x[1])+'</strong><span>'+esc(x[0])+'</span></div>').join("");
  const ch=s.changes_24h||{}, cc=ch.counts||{}, changes=ch.items||[];

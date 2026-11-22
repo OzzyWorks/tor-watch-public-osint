@@ -323,6 +323,10 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
     public_high = [x for x in threat_alerts if int(x.get("risk") or 0) >= 65]
     errors = [x for x in site_health if x.get("status") == "error"]
     confirmed = [x for x in threat_alerts if x.get("officially_confirmed") is True]
+    # Keep simple company-name matches separate from incident-related evidence.
+    name_only = [x for x in threat_alerts if 0 < int(x.get("evidence_strength") or 0) <= 15]
+    contextual = [x for x in threat_alerts if 15 < int(x.get("evidence_strength") or 0) <= 40]
+    incident_related = [x for x in threat_alerts if int(x.get("evidence_strength") or 0) > 40]
 
     if critical:
         headline = f"要確認：監視ページでCRITICAL判定が{len(critical)}件"
@@ -417,6 +421,9 @@ def build_executive_summary(pages, events, threat_alerts, site_health, correlati
             "multi_source_candidates": len(correlations),
             "site_errors": len(errors),
             "officially_confirmed": len(confirmed),
+            "name_only_matches": len(name_only),
+            "contextual_matches": len(contextual),
+            "incident_related_mentions": len(incident_related),
         },
         "top_items": top_items,
         "changes_24h": {

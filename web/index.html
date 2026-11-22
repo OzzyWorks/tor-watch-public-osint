@@ -166,7 +166,7 @@ function renderExecutiveSummary(){
     '<div class="meta">重要度 '+Number(x.risk)+' · 根拠 '+Number(x.evidence_strength)+'/100 · '+esc(x.status)+'</div>'+
     (x.plain_explanation?'<div class="executive-copy">'+esc(x.plain_explanation)+'</div>':'')+
     (x.recommended_action?'<div class="meta"><strong>次に確認：</strong>'+esc(x.recommended_action)+'</div>':'')+'</div>';
-  }).join(""):'<div class="meta" style="margin-top:14px">優先候補として表示する情報はありません。</div>';
+  }).join(""):'<div class="meta" style="margin-top:14px">優先候補として表示する情報はありません。</div>');
  document.getElementById("executiveScope").textContent=s.scope_note||"";
 }
 

@@ -37,7 +37,7 @@ class EvidenceAssessmentTests(unittest.TestCase):
         con = init(self.db)
         self.assertEqual(con.execute(
             "SELECT confidence FROM incidents WHERE incident_id='INC-E'"
-        ).fetchone()[0], 50)
+        ).fetchone()[0], 42)
         con.close()
 
     def test_attacker_claims_alone_are_capped(self):

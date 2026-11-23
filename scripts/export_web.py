@@ -112,5 +112,7 @@ OUT.write_text(json.dumps({
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity,
-    "incident_correlations":incident_correlations,"company_timeline":company_timeline,\n    "intelligence_discoveries":intelligence_discoveries,"intelligence_incidents":intelligence_incidents,\n    "executive_summary":executive_summary
+    "incident_correlations":incident_correlations,"company_timeline":company_timeline,
+    "intelligence_discoveries":intelligence_discoveries,"intelligence_incidents":intelligence_incidents,
+    "executive_summary":executive_summary
 },ensure_ascii=False,indent=2),encoding="utf-8")

@@ -40,7 +40,7 @@ def link_incidents(incident_id: str, related_incident_id: str, relation_type: st
         ids,
     ).fetchall()
     valid = {row["evidence_id"]: row["incident_id"] for row in rows}
-    if len(valid) != len(ids) or not any(
+    if len(valid) != len(ids) or not all(
         owner in {incident_id, related_incident_id} for owner in valid.values()
     ):
         con.close()

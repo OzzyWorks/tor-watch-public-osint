@@ -41,3 +41,16 @@ jobs:
           PY
       - name: Run unit tests
         run: python -m unittest discover -s tests
+      - name: Build dashboard data and verify intelligence schema
+        run: |
+          python scripts/export_web.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("web/data.json").read_text(encoding="utf-8"))
+          required = {"intelligence_discoveries", "intelligence_incidents"}
+          if not required.issubset(data):
+              raise SystemExit("Missing intelligence export fields")
+          if not isinstance(data["intelligence_discoveries"], list) or not isinstance(data["intelligence_incidents"], list):
+              raise SystemExit("Intelligence export fields must be arrays")
+          PY

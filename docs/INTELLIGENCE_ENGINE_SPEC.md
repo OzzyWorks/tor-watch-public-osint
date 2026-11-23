@@ -53,4 +53,4 @@ Each discovery includes category, title, summary, affected period, baseline peri
 Investment decisions, portfolio recommendations, leaked-file acquisition, attacker interaction, credential collection, access-control bypass, and unbounded crawling.
 
 ## Rollout
-Additive SQLite migrations only. Keep existing exports backward-compatible. Each roadmap item is complete only after unit tests and the relevant GitHub Actions run succeed. Feature scope freezes after item 12 of the overall project.
+Additive SQLite migrations only. Keep existing exports backward-compatible. Each roadmap item is complete only after unit tests and the relevant GitHub Actions run succeed. Feature scope freezes after item 9 of this intelligence-engine roadmap. No additional feature scope is added after acceptance; only defects and security fixes remain in scope.

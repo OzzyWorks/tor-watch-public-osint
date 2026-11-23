@@ -51,7 +51,8 @@ def upsert_actor(canonical_name: str, description: str = "", profile: dict | Non
             WHEN excluded.last_seen_at IS NULL THEN actors.last_seen_at
             WHEN excluded.last_seen_at > actors.last_seen_at THEN excluded.last_seen_at
             ELSE actors.last_seen_at END,
-          profile_json=excluded.profile_json, updated_at=excluded.updated_at
+          profile_json=CASE WHEN excluded.profile_json!='{}' THEN excluded.profile_json
+                           ELSE actors.profile_json END, updated_at=excluded.updated_at
     """, (actor_id, name, description, observed_at, observed_at,
           json.dumps(profile or {}, ensure_ascii=False, sort_keys=True), now))
     con.commit()

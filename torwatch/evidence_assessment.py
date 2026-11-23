@@ -66,7 +66,8 @@ def assess_incident_confidence(incident_id: str, db_path=None) -> dict:
             groups[group] = {"weight": weight, "base_weight": base_weight, "evidence": item}
     score = min(100, sum(item["weight"] for item in groups.values()))
     attacker_only = bool(groups) and all(
-        item["weight"] <= _WEIGHTS["attacker_claim"] for item in groups.values()
+        item["evidence"]["evidence_type"] == "attacker_claim"
+        for item in groups.values()
     )
     if attacker_only:
         score = min(score, 15)

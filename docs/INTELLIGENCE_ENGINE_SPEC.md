@@ -57,6 +57,7 @@ Each discovery includes category, title, summary, affected period, baseline peri
 - Incident relationships are typed and require evidence references plus a rationale. Evidence must belong to one of the linked incidents.
 - Discovery compares stable 30-calendar-day windows. It labels patterns as new, recurring, rising, or anomalous, adjusts expected counts for the number of independent source groups, and records coverage caveats.
 - The scheduled Pages workflow runs migration, candidate generation, evidence assessment, and discovery before exporting intelligence_discoveries and intelligence_incidents to the dashboard. The dashboard presents discoveries and investigation candidates separately from monitoring severity.
+- The SQLite history merge explicitly preserves all intelligence tables from both the latest main database and the current runner, while retaining the legacy monitoring tables.
 
 ## Out of scope
 Investment decisions, portfolio recommendations, leaked-file acquisition, attacker interaction, credential collection, access-control bypass, and unbounded crawling.

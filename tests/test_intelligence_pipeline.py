@@ -32,6 +32,7 @@ class IntelligencePipelineTests(unittest.TestCase):
             self.assertEqual(first["incidents_assessed"], 1)
             self.assertEqual(second["incidents_created"], 0)
             self.assertEqual(second["observation_links"], 1)
+            self.assertEqual(first["discoveries"], second["discoveries"])
             con = init(db)
             self.assertEqual(con.execute("SELECT COUNT(*) FROM incidents").fetchone()[0], 1)
             self.assertEqual(con.execute("SELECT COUNT(*) FROM evidence").fetchone()[0], 1)

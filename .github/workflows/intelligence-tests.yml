@@ -1,0 +1,56 @@
+name: Intelligence Engine Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - "feature/intelligence-engine-*"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Compile Python modules
+        run: python -m compileall -q torwatch scripts
+      - name: Validate dashboard JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re
+          import subprocess
+          import tempfile
+          from pathlib import Path
+          html = Path("web/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+          if not scripts:
+              raise SystemExit("No inline dashboard script found")
+          with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
+              handle.write("\n".join(scripts))
+              result = subprocess.run(["node", "--check", handle.name], capture_output=True, text=True)
+              if result.returncode:
+                  raise SystemExit(result.stderr)
+          PY
+      - name: Run unit tests
+        run: python -m unittest discover -s tests
+      - name: Build dashboard data and verify intelligence schema
+        run: |
+          python scripts/export_web.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("web/data.json").read_text(encoding="utf-8"))
+          required = {"intelligence_discoveries", "intelligence_incidents"}
+          if not required.issubset(data):
+              raise SystemExit("Missing intelligence export fields")
+          if not isinstance(data["intelligence_discoveries"], list) or not isinstance(data["intelligence_incidents"], list):
+              raise SystemExit("Intelligence export fields must be arrays")
+          PY

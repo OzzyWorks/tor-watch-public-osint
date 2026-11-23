@@ -59,10 +59,11 @@ def assess_incident_confidence(incident_id: str, db_path=None) -> dict:
     for row in rows:
         item = dict(row)
         group = item["source_independence_group"]
-        weight = _WEIGHTS.get(item["evidence_type"], 5)
+        base_weight = _WEIGHTS.get(item["evidence_type"], 5)
+        weight = round(base_weight * item["confidence"] / 100)
         current = groups.get(group)
         if current is None or weight > current["weight"]:
-            groups[group] = {"weight": weight, "evidence": item}
+            groups[group] = {"weight": weight, "base_weight": base_weight, "evidence": item}
     score = min(100, sum(item["weight"] for item in groups.values()))
     attacker_only = bool(groups) and all(
         item["weight"] <= _WEIGHTS["attacker_claim"] for item in groups.values()
@@ -70,8 +71,9 @@ def assess_incident_confidence(incident_id: str, db_path=None) -> dict:
     if attacker_only:
         score = min(score, 15)
     rationale_parts = [
-        f"{group}: {item['evidence']['evidence_type']} +{item['weight']} "
-        f"({item['evidence']['rationale']})"
+        f"{group}: {item['evidence']['evidence_type']} "
+        f"(base {item['base_weight']} × evidence rating {item['evidence']['confidence']}%) "
+        f"+{item['weight']} ({item['evidence']['rationale']})"
         for group, item in sorted(groups.items())
     ]
     if not groups:

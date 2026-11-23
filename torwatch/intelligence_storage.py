@@ -171,6 +171,12 @@ def init(db_path: str | Path | None = None) -> sqlite3.Connection:
         FOREIGN KEY(observation_id) REFERENCES observations(observation_id) ON DELETE CASCADE,
         FOREIGN KEY(candidate_observation_id) REFERENCES observations(observation_id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS incident_candidate_keys (
+        candidate_key TEXT PRIMARY KEY,
+        incident_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(incident_id) REFERENCES incidents(incident_id) ON DELETE CASCADE
+    );
     """)
     con.execute(
         "INSERT OR IGNORE INTO intelligence_schema_version(version, applied_at) VALUES(1, ?)",

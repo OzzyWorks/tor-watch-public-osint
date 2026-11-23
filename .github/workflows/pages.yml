@@ -72,6 +72,8 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python -m torwatch.cli --run
+      - name: Migrate public alerts into intelligence observations
+        run: python scripts/migrate_intelligence.py
       - name: Persist monitoring state
         run: python scripts/persist_history.py
       - name: Export web data

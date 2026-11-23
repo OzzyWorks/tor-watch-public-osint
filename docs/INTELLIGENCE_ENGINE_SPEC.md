@@ -49,6 +49,15 @@ Each discovery includes category, title, summary, affected period, baseline peri
 - Build typed, evidence-backed relations between distinct incidents.
 - Detect new, recurring, rising, and anomalous patterns with coverage-aware baselines.
 
+## Implemented investigation and discovery behavior
+- Actor profiles are canonical-name records with aliases, public HTTPS provenance, and separate 'claimed', 'reported', 'suspected', or 'confirmed' incident links. Creating a profile does not attribute an incident.
+- Incident timelines retain the original observation, publication/observation timestamp, source class, assertion type, provenance group, and the reason for each incident link.
+- Evidence strength counts each independent provenance group once. Contribution weights are conservative (official 35, government advisory 25, media report 15, attacker claim 5), multiplied by the recorded evidence rating. Attacker-only evidence is capped at 15/100. This is an explainable strength score, not a probability.
+- Duplicate candidates are generated only for matching canonical URLs or near-identical titles (similarity at least 0.94) within 14 days. Observations are never merged automatically; a reviewer can explicitly keep a pair separate.
+- Incident relationships are typed and require evidence references plus a rationale. Evidence must belong to one of the linked incidents.
+- Discovery compares stable 30-calendar-day windows. It labels patterns as new, recurring, rising, or anomalous, adjusts expected counts for the number of independent source groups, and records coverage caveats.
+- The scheduled Pages workflow runs migration, candidate generation, evidence assessment, and discovery before exporting intelligence_discoveries and intelligence_incidents to the dashboard. The dashboard presents discoveries and investigation candidates separately from monitoring severity.
+
 ## Out of scope
 Investment decisions, portfolio recommendations, leaked-file acquisition, attacker interaction, credential collection, access-control bypass, and unbounded crawling.
 

@@ -69,3 +69,54 @@ sources:
     language: en
     provenance_group: darkreading
     update_interval_minutes: 360
+
+  - id: cisa_advisories
+    name: CISA All Cybersecurity Advisories
+    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    enabled: true
+    category: government_security
+    source_class: government_advisory
+    reliability: high
+    language: en
+    provenance_group: cisa
+    update_interval_minutes: 360
+  - id: securityaffairs
+    name: Security Affairs
+    url: https://securityaffairs.com/feed
+    enabled: true
+    category: security_media
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: securityaffairs
+    update_interval_minutes: 360
+  - id: malwarebytes
+    name: Malwarebytes Labs
+    url: https://www.malwarebytes.com/blog/feed
+    enabled: true
+    category: security_research
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: malwarebytes
+    update_interval_minutes: 360
+  - id: cyberscoop
+    name: CyberScoop
+    url: https://cyberscoop.com/feed/
+    enabled: true
+    category: security_media
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: cyberscoop
+    update_interval_minutes: 360
+  - id: helpnetsecurity
+    name: Help Net Security
+    url: https://www.helpnetsecurity.com/feed/
+    enabled: true
+    category: security_media
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: helpnetsecurity
+    update_interval_minutes: 360

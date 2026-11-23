@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 import yaml
 from torwatch.analytics import classify_site_recovery, build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 from torwatch.risk import assess_evidence
+from torwatch.incident_timeline import build_incident_timeline
 from torwatch.intelligence import normalize_incidents, build_actor_profiles, build_relationships, detect_discoveries
 
 DB=Path("data/history.db")
@@ -34,6 +35,8 @@ pages=[]
 events=[]
 threat_alerts=[]
 site_health=[]
+intelligence_discoveries=[]
+intelligence_incidents=[]
 if DB.exists():
     con=sqlite3.connect(DB)
     con.row_factory=sqlite3.Row
@@ -68,6 +71,40 @@ if DB.exists():
             item.update(classify_site_recovery(item))
     except sqlite3.OperationalError:
         pass
+    try:
+        rows=con.execute("""SELECT discovery_id,category,title,summary,period_start,period_end,
+            baseline_start,baseline_end,observed_count,expected_count,confidence,rationale,
+            coverage_notes,related_incidents_json,created_at,status
+            FROM discovery_items ORDER BY created_at DESC LIMIT 30""").fetchall()
+        for r in rows:
+            item=dict(r)
+            try:
+                item["related_incidents"]=json.loads(item.pop("related_incidents_json") or "[]")
+            except (TypeError,ValueError):
+                item["related_incidents"]=[]
+            intelligence_discoveries.append(item)
+    except sqlite3.OperationalError:
+        pass
+    try:
+        rows=con.execute("""SELECT i.incident_id,i.victim,i.country,i.sector,i.event_types_json,
+            i.status,i.severity,i.confidence,i.first_seen_at,i.published_at,i.detected_at,
+            i.summary,COUNT(DISTINCT io.observation_id) AS observation_count,
+            COUNT(DISTINCT ev.evidence_id) AS evidence_count
+            FROM incidents i
+            LEFT JOIN incident_observations io ON io.incident_id=i.incident_id
+            LEFT JOIN evidence ev ON ev.incident_id=i.incident_id
+            GROUP BY i.incident_id ORDER BY COALESCE(i.detected_at,i.first_seen_at,i.published_at) DESC
+            LIMIT 50""").fetchall()
+        for r in rows:
+            item=dict(r)
+            try:
+                item["event_types"]=json.loads(item.pop("event_types_json") or "[]")
+            except (TypeError,ValueError):
+                item["event_types"]=[]
+            item["timeline"]=build_incident_timeline(item["incident_id"])[:10]
+            intelligence_incidents.append(item)
+    except sqlite3.OperationalError:
+        pass
     con.close()
 
 group_config=yaml.safe_load(GROUPS.read_text(encoding="utf-8")) if GROUPS.exists() else {"groups":[]}
@@ -79,12 +116,14 @@ executive_summary=build_executive_summary(pages,events,threat_alerts,site_health
 incidents=normalize_incidents(threat_alerts,group_config.get("groups",[]))
 actor_profiles=build_actor_profiles(group_config.get("groups",[]),incidents,events)
 incident_relationships=build_relationships(incidents)
-discoveries=detect_discoveries(incidents,actor_profiles)
+legacy_discoveries=detect_discoveries(incidents,actor_profiles)
 OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity,
-    "incident_correlations":incident_correlations,"company_timeline":company_timeline,"executive_summary":executive_summary,
-    "intelligence":{"incidents":incidents,"actors":actor_profiles,"relationships":incident_relationships,"discoveries":discoveries}
+    "incident_correlations":incident_correlations,"company_timeline":company_timeline,
+    "intelligence_discoveries":intelligence_discoveries,"intelligence_incidents":intelligence_incidents,
+    "intelligence":{"incidents":incidents,"actors":actor_profiles,"relationships":incident_relationships,"discoveries":legacy_discoveries},
+    "executive_summary":executive_summary
 },ensure_ascii=False,indent=2),encoding="utf-8")

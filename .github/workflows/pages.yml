@@ -74,6 +74,8 @@ jobs:
         run: python -m torwatch.cli --run
       - name: Migrate public alerts into intelligence observations
         run: python -m scripts.migrate_intelligence
+      - name: Build incident candidates and discover patterns
+        run: python -m torwatch.intelligence_pipeline
       - name: Persist monitoring state
         run: python scripts/persist_history.py
       - name: Export web data

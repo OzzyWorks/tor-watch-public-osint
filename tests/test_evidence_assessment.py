@@ -46,6 +46,12 @@ class EvidenceAssessmentTests(unittest.TestCase):
         result = assess_incident_confidence("INC-E", self.db)
         self.assertEqual(result["confidence"], 5)
 
+    def test_unverified_evidence_is_not_mislabeled_as_attacker_claim(self):
+        record_evidence("INC-E", None, "unverified", "unknown-origin",
+                        "Unclassified report", 100, "No assertion type could be established", self.db)
+        result = assess_incident_confidence("INC-E", self.db)
+        self.assertFalse(any("Attacker claims alone" in item for item in result["rationale"]))
+
     def test_rationale_and_source_group_are_required(self):
         with self.assertRaises(ValueError):
             record_evidence("INC-E", None, "media_report", "origin", "report", 50, "", self.db)

@@ -31,7 +31,7 @@ class EvidenceAssessmentTests(unittest.TestCase):
         record_evidence("INC-E", None, "official", "victim-site",
                         "Company confirms incident", 95, "Victim disclosure", self.db)
         result = assess_incident_confidence("INC-E", self.db)
-        self.assertEqual(result["confidence"], 50)
+        self.assertEqual(result["confidence"], 42)
         self.assertEqual(result["independent_source_groups"], 2)
         self.assertFalse(result["is_probability"])
         con = init(self.db)

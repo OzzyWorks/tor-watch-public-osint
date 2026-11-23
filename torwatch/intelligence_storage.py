@@ -160,6 +160,17 @@ def init(db_path: str | Path | None = None) -> sqlite3.Connection:
         created_at TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'new'
     );
+    CREATE TABLE IF NOT EXISTS observation_duplicate_reviews (
+        pair_key TEXT PRIMARY KEY,
+        observation_id TEXT NOT NULL,
+        candidate_observation_id TEXT NOT NULL,
+        decision TEXT NOT NULL CHECK(decision IN ('separate','same_incident_candidate')),
+        rationale TEXT NOT NULL DEFAULT '',
+        reviewed_at TEXT NOT NULL,
+        CHECK(observation_id < candidate_observation_id),
+        FOREIGN KEY(observation_id) REFERENCES observations(observation_id) ON DELETE CASCADE,
+        FOREIGN KEY(candidate_observation_id) REFERENCES observations(observation_id) ON DELETE CASCADE
+    );
     """)
     con.execute(
         "INSERT OR IGNORE INTO intelligence_schema_version(version, applied_at) VALUES(1, ?)",

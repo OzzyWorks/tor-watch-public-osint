@@ -27,10 +27,13 @@ finally:
 if not DATA.exists():
     raise SystemExit("Dashboard data file is missing")
 payload = json.loads(DATA.read_text(encoding="utf-8"))
-required = ("updated_at", "pages", "events", "site_health", "executive_summary")
+required = ("updated_at", "pages", "events", "site_health", "executive_summary",
+            "intelligence_discoveries", "intelligence_incidents")
 missing = [key for key in required if key not in payload]
 if missing:
     raise SystemExit("Dashboard data is missing required keys: " + ", ".join(missing))
+if not isinstance(payload.get("intelligence_discoveries"), list) or not isinstance(payload.get("intelligence_incidents"), list):
+    raise SystemExit("Intelligence dashboard collections must be arrays")
 if not payload.get("updated_at"):
     raise SystemExit("Dashboard data timestamp is empty")
 if not payload.get("pages") or not payload.get("site_health"):

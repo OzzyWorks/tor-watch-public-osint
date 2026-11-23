@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time as dt_time
 
 from .intelligence_storage import init
 from .incident_timeline import attach_observation
@@ -107,11 +107,15 @@ def run_intelligence_pipeline(db_path=None, observation_limit: int = 10000) -> d
     for incident_id in sorted(touched_incidents):
         assess_incident_confidence(incident_id, db_path)
 
-    now = datetime.now(timezone.utc)
-    current_start = (now - timedelta(days=30)).isoformat()
-    current_end = now.isoformat()
-    baseline_start = (now - timedelta(days=60)).isoformat()
-    baseline_end = (now - timedelta(days=30)).isoformat()
+    today = datetime.now(timezone.utc).date()
+    current_start_dt = datetime.combine(today - timedelta(days=30), dt_time.min, tzinfo=timezone.utc)
+    current_end_dt = datetime.combine(today, dt_time.max, tzinfo=timezone.utc)
+    baseline_start_dt = current_start_dt - timedelta(days=30)
+    baseline_end_dt = current_start_dt - timedelta(microseconds=1)
+    current_start = current_start_dt.isoformat()
+    current_end = current_end_dt.isoformat()
+    baseline_start = baseline_start_dt.isoformat()
+    baseline_end = baseline_end_dt.isoformat()
     discoveries = discover_patterns(
         current_start, current_end, baseline_start, baseline_end, db_path
     )

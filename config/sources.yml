@@ -3,27 +3,55 @@ sources:
     name: JPCERT/CC 注意喚起・緊急報告
     url: https://www.jpcert.or.jp/rss/jpcert.rdf
     enabled: true
+    category: national_csirt
+    reliability: high
+    language: ja
+    method: rss
   - id: ipa
     name: IPA 重要なセキュリティ情報
     url: https://www.ipa.go.jp/security/rss/alert.rdf
     enabled: true
+    category: government
+    reliability: high
+    language: ja
+    method: rss
   - id: jvn
     name: JVN 脆弱性情報
     url: https://jvn.jp/rss/jvn.rdf
     enabled: true
+    category: vulnerability_database
+    reliability: high
+    language: ja
+    method: rss
   - id: bleepingcomputer
     name: BleepingComputer
     url: https://www.bleepingcomputer.com/feed/
     enabled: true
+    category: security_media
+    reliability: medium_high
+    language: en
+    method: rss
   - id: securityweek
     name: SecurityWeek
     url: https://www.securityweek.com/feed/
     enabled: true
+    category: security_media
+    reliability: medium_high
+    language: en
+    method: rss
   - id: therecord
     name: The Record by Recorded Future
     url: https://therecord.media/feed/
     enabled: true
+    category: security_media
+    reliability: medium_high
+    language: en
+    method: rss
   - id: darkreading
     name: Dark Reading
     url: https://www.darkreading.com/rss.xml
     enabled: true
+    category: security_media
+    reliability: medium_high
+    language: en
+    method: rss

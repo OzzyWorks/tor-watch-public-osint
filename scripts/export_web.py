@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 import yaml
 from torwatch.analytics import classify_site_recovery, build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 from torwatch.risk import assess_evidence
+from torwatch.intelligence import normalize_incidents, build_actor_profiles, build_relationships, detect_discoveries
 
 DB=Path("data/history.db")
 OUT=Path("web/data.json")
@@ -75,10 +76,15 @@ group_activity=build_group_activity(pages,events,group_config.get("groups",[]))
 incident_correlations=build_incident_correlations(threat_alerts)
 company_timeline=build_company_timeline(events,threat_alerts)
 executive_summary=build_executive_summary(pages,events,threat_alerts,site_health,incident_correlations)
+incidents=normalize_incidents(threat_alerts,group_config.get("groups",[]))
+actor_profiles=build_actor_profiles(group_config.get("groups",[]),incidents,events)
+incident_relationships=build_relationships(incidents)
+discoveries=detect_discoveries(incidents,actor_profiles)
 OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity,
-    "incident_correlations":incident_correlations,"company_timeline":company_timeline,"executive_summary":executive_summary
+    "incident_correlations":incident_correlations,"company_timeline":company_timeline,"executive_summary":executive_summary,
+    "intelligence":{"incidents":incidents,"actors":actor_profiles,"relationships":incident_relationships,"discoveries":discoveries}
 },ensure_ascii=False,indent=2),encoding="utf-8")

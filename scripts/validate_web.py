@@ -33,7 +33,8 @@ missing = [key for key in required if key not in payload]
 if missing:
     raise SystemExit("Dashboard data is missing required keys: " + ", ".join(missing))
 if not isinstance(payload.get("intelligence_discoveries"), list) or not isinstance(payload.get("intelligence_incidents"), list):
-    raise SystemExit("Intelligence dashboard collections must be arrays")\nif not payload.get("updated_at"):
+    raise SystemExit("Intelligence dashboard collections must be arrays")
+if not payload.get("updated_at"):
     raise SystemExit("Dashboard data timestamp is empty")
 if not payload.get("pages") or not payload.get("site_health"):
     raise SystemExit("Dashboard export is unexpectedly empty; refusing to publish")

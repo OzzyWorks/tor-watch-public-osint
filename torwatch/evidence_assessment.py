@@ -60,7 +60,7 @@ def assess_incident_confidence(incident_id: str, db_path=None) -> dict:
         item = dict(row)
         group = item["source_independence_group"]
         base_weight = _WEIGHTS.get(item["evidence_type"], 5)
-        weight = round(base_weight * item["confidence"] / 100)
+        weight = int(base_weight * item["confidence"] / 100 + 0.5)
         current = groups.get(group)
         if current is None or weight > current["weight"]:
             groups[group] = {"weight": weight, "base_weight": base_weight, "evidence": item}

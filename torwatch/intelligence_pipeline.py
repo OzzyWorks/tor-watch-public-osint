@@ -108,7 +108,7 @@ def run_intelligence_pipeline(db_path=None, observation_limit: int = 10000) -> d
         assess_incident_confidence(incident_id, db_path)
 
     today = datetime.now(timezone.utc).date()
-    current_start_dt = datetime.combine(today - timedelta(days=30), dt_time.min, tzinfo=timezone.utc)
+    current_start_dt = datetime.combine(today - timedelta(days=29), dt_time.min, tzinfo=timezone.utc)
     current_end_dt = datetime.combine(today, dt_time.max, tzinfo=timezone.utc)
     baseline_start_dt = current_start_dt - timedelta(days=30)
     baseline_end_dt = current_start_dt - timedelta(microseconds=1)

@@ -203,11 +203,19 @@ function renderIntelligence(){
  if(incidentHost){
   incidentHost.innerHTML=incidents.slice(0,30).map(x=>{
    const types=(x.event_types||[]).join("・")||"種別未分類";
+   const timeline=(x.timeline||[]).map(t=>{
+    const href=String(t.url||""), safe=/^https:\/\//i.test(href)?href:"";
+    const assertion={official:"企業公式",official_candidate:"公式発表候補",attacker_claim:"攻撃者の主張",media_report:"報道",government_advisory:"政府注意喚起"}[t.assertion_type]||"未確認";
+    return '<div class="meta">• '+esc(t.timestamp||"日時不明")+' · '+esc(assertion)+' · '+esc(t.source_name||t.source_id||"情報源不明")+
+     ' · '+(safe?'<a href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(t.title||"原文")+'</a>':esc(t.title||""))+'</div>';
+   }).join("");
+   const timelineHtml=timeline?'<details><summary>情報源の時系列を見る（'+(x.timeline||[]).length+'件）</summary>'+timeline+'</details>':'';
    return '<div class="row"><div><div class="title">'+esc(x.victim||"対象未特定")+'</div>'+
     '<div class="meta">'+esc(types)+' · '+esc(x.incident_id)+'</div></div>'+
     '<div><span class="badge unavailable">調査候補</span></div>'+
-    '<div class="meta">観測 '+Number(x.observation_count||0)+'件 · 根拠評価 '+Number(x.confidence||0)+'/100</div>'+
-    '<div class="meta">'+esc(x.detected_at||x.published_at||x.first_seen_at||"日時不明")+'</div></div>';
+    '<div class="meta">観測 '+Number(x.observation_count||0)+'件 · 証拠 '+Number(x.evidence_count||0)+'件 · 根拠評価 '+Number(x.confidence||0)+'/100</div>'+
+    '<div class="meta">'+esc(x.detected_at||x.published_at||x.first_seen_at||"日時不明")+'</div>'+
+    (timelineHtml?'<div style="grid-column:1/-1">'+timelineHtml+'</div>':'')+'</div>';
   }).join("")||'<div class="empty">調査候補はまだありません。</div>';
  }
 }

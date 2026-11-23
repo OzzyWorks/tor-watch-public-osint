@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 import yaml
 from torwatch.analytics import classify_site_recovery, build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 from torwatch.risk import assess_evidence
+from torwatch.incident_timeline import build_incident_timeline
 
 DB=Path("data/history.db")
 OUT=Path("web/data.json")
@@ -86,8 +87,11 @@ if DB.exists():
     try:
         rows=con.execute("""SELECT i.incident_id,i.victim,i.country,i.sector,i.event_types_json,
             i.status,i.severity,i.confidence,i.first_seen_at,i.published_at,i.detected_at,
-            i.summary,COUNT(io.observation_id) AS observation_count
-            FROM incidents i LEFT JOIN incident_observations io ON io.incident_id=i.incident_id
+            i.summary,COUNT(DISTINCT io.observation_id) AS observation_count,
+            COUNT(DISTINCT ev.evidence_id) AS evidence_count
+            FROM incidents i
+            LEFT JOIN incident_observations io ON io.incident_id=i.incident_id
+            LEFT JOIN evidence ev ON ev.incident_id=i.incident_id
             GROUP BY i.incident_id ORDER BY COALESCE(i.detected_at,i.first_seen_at,i.published_at) DESC
             LIMIT 50""").fetchall()
         for r in rows:
@@ -96,6 +100,7 @@ if DB.exists():
                 item["event_types"]=json.loads(item.pop("event_types_json") or "[]")
             except (TypeError,ValueError):
                 item["event_types"]=[]
+            item["timeline"]=build_incident_timeline(item["incident_id"])[:10]
             intelligence_incidents.append(item)
     except sqlite3.OperationalError:
         pass

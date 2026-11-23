@@ -33,6 +33,8 @@ pages=[]
 events=[]
 threat_alerts=[]
 site_health=[]
+intelligence_discoveries=[]
+intelligence_incidents=[]
 if DB.exists():
     con=sqlite3.connect(DB)
     con.row_factory=sqlite3.Row
@@ -67,6 +69,36 @@ if DB.exists():
             item.update(classify_site_recovery(item))
     except sqlite3.OperationalError:
         pass
+    try:
+        rows=con.execute("""SELECT discovery_id,category,title,summary,period_start,period_end,
+            baseline_start,baseline_end,observed_count,expected_count,confidence,rationale,
+            coverage_notes,related_incidents_json,created_at,status
+            FROM discovery_items ORDER BY created_at DESC LIMIT 30""").fetchall()
+        for r in rows:
+            item=dict(r)
+            try:
+                item["related_incidents"]=json.loads(item.pop("related_incidents_json") or "[]")
+            except (TypeError,ValueError):
+                item["related_incidents"]=[]
+            intelligence_discoveries.append(item)
+    except sqlite3.OperationalError:
+        pass
+    try:
+        rows=con.execute("""SELECT i.incident_id,i.victim,i.country,i.sector,i.event_types_json,
+            i.status,i.severity,i.confidence,i.first_seen_at,i.published_at,i.detected_at,
+            i.summary,COUNT(io.observation_id) AS observation_count
+            FROM incidents i LEFT JOIN incident_observations io ON io.incident_id=i.incident_id
+            GROUP BY i.incident_id ORDER BY COALESCE(i.detected_at,i.first_seen_at,i.published_at) DESC
+            LIMIT 50""").fetchall()
+        for r in rows:
+            item=dict(r)
+            try:
+                item["event_types"]=json.loads(item.pop("event_types_json") or "[]")
+            except (TypeError,ValueError):
+                item["event_types"]=[]
+            intelligence_incidents.append(item)
+    except sqlite3.OperationalError:
+        pass
     con.close()
 
 group_config=yaml.safe_load(GROUPS.read_text(encoding="utf-8")) if GROUPS.exists() else {"groups":[]}
@@ -80,5 +112,5 @@ OUT.write_text(json.dumps({
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
     "site_health":site_health,
     "company_radar":company_radar,"group_activity":group_activity,
-    "incident_correlations":incident_correlations,"company_timeline":company_timeline,"executive_summary":executive_summary
+    "incident_correlations":incident_correlations,"company_timeline":company_timeline,\n    "intelligence_discoveries":intelligence_discoveries,"intelligence_incidents":intelligence_incidents,\n    "executive_summary":executive_summary
 },ensure_ascii=False,indent=2),encoding="utf-8")

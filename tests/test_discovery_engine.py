@@ -104,7 +104,7 @@ class DiscoveryEngineTests(unittest.TestCase):
         sector = next(x for x in recurring if x["category"] == "sector")
         self.assertEqual(sector["pattern"], "recurring")
 
-        for idx in range(5, 9):
+        for idx in range(5, 19):
             self._add_linked_incident(
                 f"INC-{idx}", f"2026-11-{idx + 1:02d}T00:00:00Z",
                 "feed-a" if idx % 2 else "feed-b",

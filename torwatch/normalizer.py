@@ -74,11 +74,13 @@ def detect_event_types(title: object, summary: object = "") -> list[str]:
 
 
 def classify_assertion(source_class: object, title: object, summary: object = "") -> str:
-    """Classify the nature of an assertion; never infer official confirmation from a URL."""
+    """Classify assertion provenance; government advisories are not victim confirmation."""
     source = normalize_text(source_class)
     text = f"{normalize_text(title)} {normalize_text(summary)}"
-    if source in {"official", "government", "affected_org"}:
+    if source in {"official", "affected_org"}:
         return "official"
+    if source in {"government", "government_advisory", "vulnerability_advisory"}:
+        return "government_advisory"
     if any(term in text for term in _ASSERTION_TERMS["attacker_claim"]):
         return "attacker_claim"
     if any(term in text for term in _ASSERTION_TERMS["official"]):
@@ -126,6 +128,7 @@ def normalize_observation(item: dict) -> dict:
     companies = item.get("companies") or item.get("matched_assets") or []
     if isinstance(companies, str):
         companies = [part.strip() for part in companies.split("|") if part.strip()]
+    companies = list(dict.fromkeys(str(x).strip() for x in companies if str(x).strip()))
     event_types = detect_event_types(title, summary)
     return {
         "observation_id": observation_id(source_id, url, title),
@@ -137,11 +140,11 @@ def normalize_observation(item: dict) -> dict:
         "published_at": published_at,
         "observed_at": observed_at,
         "language": str(item.get("language") or "unknown"),
-        "companies": list(dict.fromkeys(str(x).strip() for x in companies if str(x).strip())),
+        "companies": companies,
         "event_types": event_types,
         "assertion_type": classify_assertion(source_class, title, summary),
         "candidate_keys": [
             incident_candidate_key(company, event_types, published_at)
-            for company in companies if str(company).strip()
+            for company in companies
         ],
     }

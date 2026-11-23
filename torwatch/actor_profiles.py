@@ -17,7 +17,7 @@ def _now() -> str:
 
 
 def _canonical_name(value: str) -> str:
-    return re.sub(r"\\s+", " ", str(value or "")).strip()
+    return re.sub(r"\s+", " ", str(value or "")).strip()
 
 
 def _actor_id(canonical_name: str) -> str:

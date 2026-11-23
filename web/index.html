@@ -64,6 +64,16 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div id="executiveItems"></div>
 <div id="executiveScope" class="meta"></div>
 </section>
+<section class="panel">
+<h2>💡 新しい発見・傾向</h2>
+<div class="sub">過去30日と直前30日を比較した候補です。情報源の独立性と取得範囲を考慮しますが、件数増加は被害増加の確定を意味しません。</div>
+<div id="intelligenceDiscoveries"></div>
+</section>
+<section class="panel">
+<h2>🧭 調査候補インシデント</h2>
+<div class="sub">公開観測から自動生成した調査候補です。同じ企業・イベント種別・日付の一致は、同一事件の確定ではありません。</div>
+<div id="intelligenceIncidents"></div>
+</section>
 <section class="cards" id="cards"></section>
 
 <section class="panel">
@@ -117,7 +127,7 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 </div>
 
 <script>
-let DATA={pages:[],events:[],site_health:[]};
+let DATA={pages:[],events:[],site_health:[],intelligence_discoveries:[],intelligence_incidents:[]};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const level=r=>r>=85?["CRITICAL","critical"]:r>=70?["HIGH","high"]:r>=50?["MEDIUM","high"]:["LOW","normal"];
 const readableReason=s=>{
@@ -172,9 +182,48 @@ function renderExecutiveSummary(){
  document.getElementById("executiveScope").textContent=s.scope_note||"";
 }
 
+function renderIntelligence(){
+ const discoveries=DATA.intelligence_discoveries||[];
+ const discoveryHost=document.getElementById("intelligenceDiscoveries");
+ const labels={new:"新規",recurring:"継続",rising:"増加傾向",anomalous:"異常な増加"};
+ if(discoveryHost){
+  discoveryHost.innerHTML=discoveries.slice(0,20).map(x=>{
+   const label=labels[x.category]||x.category||"発見";
+   const ids=(x.related_incidents||[]).slice(0,8).map(esc).join("、");
+   return '<div class="exec-item"><div class="title">'+esc(label)+'：'+esc(x.title)+'</div>'+
+    '<div class="meta">今回 '+Number(x.observed_count||0)+'件 · 基準 '+(x.expected_count===null?"—":Number(x.expected_count||0).toFixed(2))+
+    '件 · 評価値 '+Number(x.confidence||0)+'/100</div>'+
+    '<div class="executive-copy">'+esc(x.rationale||x.summary||"")+'</div>'+
+    '<div class="meta">'+esc(x.coverage_notes||"")+'</div>'+
+    (ids?'<div class="meta">関連候補ID：'+ids+'</div>':'')+'</div>';
+  }).join("")||'<div class="empty">比較できる新しい傾向はまだありません。観測データが蓄積されると表示されます。</div>';
+ }
+ const incidents=DATA.intelligence_incidents||[];
+ const incidentHost=document.getElementById("intelligenceIncidents");
+ if(incidentHost){
+  incidentHost.innerHTML=incidents.slice(0,30).map(x=>{
+   const types=(x.event_types||[]).join("・")||"種別未分類";
+   const timeline=(x.timeline||[]).map(t=>{
+    const href=String(t.url||""), safe=/^https:\/\//i.test(href)?href:"";
+    const assertion={official:"企業公式",official_candidate:"公式発表候補",attacker_claim:"攻撃者の主張",media_report:"報道",government_advisory:"政府注意喚起"}[t.assertion_type]||"未確認";
+    return '<div class="meta">• '+esc(t.timestamp||"日時不明")+' · '+esc(assertion)+' · '+esc(t.source_name||t.source_id||"情報源不明")+
+     ' · '+(safe?'<a href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(t.title||"原文")+'</a>':esc(t.title||""))+'</div>';
+   }).join("");
+   const timelineHtml=timeline?'<details><summary>情報源の時系列を見る（'+(x.timeline||[]).length+'件）</summary>'+timeline+'</details>':'';
+   return '<div class="row"><div><div class="title">'+esc(x.victim||"対象未特定")+'</div>'+
+    '<div class="meta">'+esc(types)+' · '+esc(x.incident_id)+'</div></div>'+
+    '<div><span class="badge unavailable">調査候補</span></div>'+
+    '<div class="meta">観測 '+Number(x.observation_count||0)+'件 · 証拠 '+Number(x.evidence_count||0)+'件 · 根拠評価 '+Number(x.confidence||0)+'/100</div>'+
+    '<div class="meta">'+esc(x.detected_at||x.published_at||x.first_seen_at||"日時不明")+'</div>'+
+    (timelineHtml?'<div style="grid-column:1/-1">'+timelineHtml+'</div>':'')+'</div>';
+  }).join("")||'<div class="empty">調査候補はまだありません。</div>';
+ }
+}
+
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
  renderExecutiveSummary();
+ renderIntelligence();
  renderThreatAlerts();
  renderIncidentCorrelations();
  renderCompanyTimeline();

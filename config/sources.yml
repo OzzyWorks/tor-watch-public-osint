@@ -3,55 +3,120 @@ sources:
     name: JPCERT/CC 注意喚起・緊急報告
     url: https://www.jpcert.or.jp/rss/jpcert.rdf
     enabled: true
-    category: national_csirt
+    category: government_security
+    source_class: government_advisory
     reliability: high
     language: ja
-    method: rss
+    provenance_group: jpcert
+    update_interval_minutes: 360
   - id: ipa
     name: IPA 重要なセキュリティ情報
     url: https://www.ipa.go.jp/security/rss/alert.rdf
     enabled: true
-    category: government
+    category: government_security
+    source_class: government_advisory
     reliability: high
     language: ja
-    method: rss
+    provenance_group: ipa
+    update_interval_minutes: 360
   - id: jvn
     name: JVN 脆弱性情報
     url: https://jvn.jp/rss/jvn.rdf
     enabled: true
-    category: vulnerability_database
+    category: vulnerability_advisory
+    source_class: vulnerability_advisory
     reliability: high
     language: ja
-    method: rss
+    provenance_group: jvn
+    update_interval_minutes: 360
   - id: bleepingcomputer
     name: BleepingComputer
     url: https://www.bleepingcomputer.com/feed/
     enabled: true
     category: security_media
-    reliability: medium_high
+    source_class: media
+    reliability: high
     language: en
-    method: rss
+    provenance_group: bleepingcomputer
+    update_interval_minutes: 360
   - id: securityweek
     name: SecurityWeek
     url: https://www.securityweek.com/feed/
     enabled: true
     category: security_media
-    reliability: medium_high
+    source_class: media
+    reliability: high
     language: en
-    method: rss
+    provenance_group: securityweek
+    update_interval_minutes: 360
   - id: therecord
     name: The Record by Recorded Future
     url: https://therecord.media/feed/
     enabled: true
     category: security_media
-    reliability: medium_high
+    source_class: media
+    reliability: high
     language: en
-    method: rss
+    provenance_group: therecord
+    update_interval_minutes: 360
   - id: darkreading
     name: Dark Reading
     url: https://www.darkreading.com/rss.xml
     enabled: true
     category: security_media
-    reliability: medium_high
+    source_class: media
+    reliability: high
     language: en
-    method: rss
+    provenance_group: darkreading
+    update_interval_minutes: 360
+
+  - id: cisa_advisories
+    name: CISA All Cybersecurity Advisories
+    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    enabled: true
+    category: government_security
+    source_class: government_advisory
+    reliability: high
+    language: en
+    provenance_group: cisa
+    update_interval_minutes: 360
+  - id: securityaffairs
+    name: Security Affairs
+    url: https://securityaffairs.com/feed
+    enabled: true
+    category: security_media
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: securityaffairs
+    update_interval_minutes: 360
+  - id: malwarebytes
+    name: Malwarebytes Labs
+    url: https://www.malwarebytes.com/blog/feed
+    enabled: true
+    category: security_research
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: malwarebytes
+    update_interval_minutes: 360
+  - id: cyberscoop
+    name: CyberScoop
+    url: https://cyberscoop.com/feed/
+    enabled: true
+    category: security_media
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: cyberscoop
+    update_interval_minutes: 360
+  - id: helpnetsecurity
+    name: Help Net Security
+    url: https://www.helpnetsecurity.com/feed/
+    enabled: true
+    category: security_media
+    source_class: media
+    reliability: medium
+    language: en
+    provenance_group: helpnetsecurity
+    update_interval_minutes: 360

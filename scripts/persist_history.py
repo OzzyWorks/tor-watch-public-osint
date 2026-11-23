@@ -8,7 +8,14 @@ import shutil
 import sqlite3
 import subprocess
 import tempfile
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from torwatch.intelligence_storage import init as init_intelligence
 
 DB = Path("data/history.db")
 BOT_NAME = "github-actions[bot]"
@@ -23,14 +30,96 @@ def run(*args, check=True, capture=False):
     )
 
 
+def _table_exists(connection, table_name):
+    return connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+        (table_name,),
+    ).fetchone() is not None
+
+
+def _merge_intelligence_tables(target, source):
+    """Merge the additive intelligence schema without dropping remote or local evidence."""
+    specifications = [
+        ("intelligence_schema_version", ["version"], [], None),
+        ("intel_sources", ["source_id"], [
+            "name", "category", "source_class", "reliability", "language",
+            "enabled", "provenance_group", "last_success_at", "last_error", "updated_at",
+        ], "updated_at"),
+        ("observations", ["observation_id"], [], None),
+        ("incidents", ["incident_id"], [
+            "victim", "country", "sector", "event_types_json", "status", "severity",
+            "confidence", "first_seen_at", "published_at", "detected_at", "summary", "updated_at",
+        ], "updated_at"),
+        ("actors", ["actor_id"], [
+            "canonical_name", "description", "first_seen_at", "last_seen_at",
+            "profile_json", "updated_at",
+        ], "updated_at"),
+        ("actor_aliases", ["actor_id", "alias"], [], None),
+        ("incident_observations", ["incident_id", "observation_id"], [
+            "relation_type", "confidence", "rationale",
+        ], None),
+        ("evidence", ["evidence_id"], [], None),
+        ("incident_actors", ["incident_id", "actor_id", "relation_type"], [
+            "confidence", "rationale", "evidence_ids_json",
+        ], None),
+        ("incident_relations", ["relation_id"], [
+            "incident_id", "related_incident_id", "relation_type", "confidence",
+            "rationale", "evidence_ids_json",
+        ], None),
+        ("discovery_items", ["discovery_id"], [
+            "category", "title", "summary", "period_start", "period_end",
+            "baseline_start", "baseline_end", "observed_count", "expected_count",
+            "confidence", "rationale", "coverage_notes", "related_incidents_json",
+            "status",
+        ], None),
+        ("observation_duplicate_reviews", ["pair_key"], [
+            "observation_id", "candidate_observation_id", "decision", "rationale", "reviewed_at",
+        ], "reviewed_at"),
+        ("incident_candidate_keys", ["candidate_key"], [], None),
+    ]
+    for table, key_columns, update_columns, ordering_column in specifications:
+        if not _table_exists(source, table):
+            continue
+        rows = source.execute(f"SELECT * FROM {table}").fetchall()
+        for row in rows:
+            columns = list(row.keys())
+            placeholders = ",".join("?" for _ in columns)
+            column_sql = ",".join(columns)
+            values = tuple(row[column] for column in columns)
+            if not update_columns:
+                target.execute(
+                    f"INSERT OR IGNORE INTO {table} ({column_sql}) VALUES ({placeholders})",
+                    values,
+                )
+                continue
+            updates = ",".join(
+                f"{column}=excluded.{column}" for column in update_columns
+            )
+            conflict_keys = ",".join(key_columns)
+            where = (
+                f" WHERE excluded.{ordering_column} >= {table}.{ordering_column}"
+                if ordering_column else ""
+            )
+            target.execute(
+                f"INSERT INTO {table} ({column_sql}) VALUES ({placeholders}) "
+                f"ON CONFLICT({conflict_keys}) DO UPDATE SET {updates}{where}",
+                values,
+            )
+
+
 def merge_databases(remote_path, local_path, output_path):
     if remote_path.exists() and remote_path.stat().st_size:
         shutil.copy2(remote_path, output_path)
     else:
         shutil.copy2(local_path, output_path)
 
+    # Create additive intelligence tables even when origin/main still has the legacy schema.
+    schema_connection = init_intelligence(output_path)
+    schema_connection.close()
+
     con = sqlite3.connect(output_path)
     con.row_factory = sqlite3.Row
+    con.execute("PRAGMA foreign_keys=ON")
     local = sqlite3.connect(local_path)
     local.row_factory = sqlite3.Row
     con.execute("""CREATE TABLE IF NOT EXISTS site_checks(
@@ -117,6 +206,9 @@ def merge_databases(remote_path, local_path, output_path):
             last_error = row["last_error"] or existing["last_error"]
             con.execute("""UPDATE notification_queue SET status=?,attempts=?,sent_at=?,last_error=?
                 WHERE id=?""", (status, attempts, sent_at, last_error, row["id"]))
+
+    # Preserve the intelligence engine's observations, candidates, evidence, reviews and discoveries.
+    _merge_intelligence_tables(con, local)
 
     con.commit()
     con.execute("PRAGMA wal_checkpoint(FULL)")

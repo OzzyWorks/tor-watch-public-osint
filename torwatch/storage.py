@@ -33,8 +33,42 @@ def init():
         error TEXT NOT NULL DEFAULT '', checked_at TEXT NOT NULL,
         UNIQUE(url, checked_at))""")
     con.execute("CREATE INDEX IF NOT EXISTS idx_site_check_history_url_time ON site_check_history(url, checked_at DESC)")
+    con.execute("""CREATE TABLE IF NOT EXISTS feed_checks(
+        source_id TEXT PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL,
+        item_count INTEGER NOT NULL DEFAULT 0, new_alerts INTEGER NOT NULL DEFAULT 0,
+        error TEXT NOT NULL DEFAULT '', checked_at TEXT NOT NULL,
+        last_success_at TEXT, consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
     con.commit()
     return con
+
+def record_feed_check(source_id, name, status, item_count=0, new_alerts=0, error=""):
+    """Persist the latest RSS/Atom feed health independently from alert volume."""
+    con = init()
+    now = datetime.now(timezone.utc).isoformat()
+    previous = con.execute(
+        "SELECT last_success_at,consecutive_errors FROM feed_checks WHERE source_id=?",
+        (source_id,),
+    ).fetchone()
+    if status == "ok":
+        last_success_at = now
+        consecutive_errors = 0
+        error = ""
+    else:
+        last_success_at = previous[0] if previous else None
+        consecutive_errors = (int(previous[1] or 0) + 1) if previous else 1
+    con.execute("""INSERT INTO feed_checks
+        (source_id,name,status,item_count,new_alerts,error,checked_at,last_success_at,consecutive_errors)
+        VALUES(?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(source_id) DO UPDATE SET
+        name=excluded.name,status=excluded.status,item_count=excluded.item_count,
+        new_alerts=excluded.new_alerts,error=excluded.error,checked_at=excluded.checked_at,
+        last_success_at=excluded.last_success_at,consecutive_errors=excluded.consecutive_errors
+        WHERE excluded.checked_at >= feed_checks.checked_at""",
+        (source_id, name, status, int(item_count or 0), int(new_alerts or 0),
+         str(error or "")[:400], now, last_success_at, consecutive_errors))
+    con.commit()
+    con.close()
+
 
 def get(url):
     con=init()

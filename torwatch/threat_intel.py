@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 from .config import CONFIG, load_assets
 from .risk import canonical_company_key
-from .storage import add_threat_item, list_threat_items, enqueue_notification
+from .storage import add_threat_item, list_threat_items, enqueue_notification, record_feed_check
 
 UA = "TorWatch-Public-OSINT/0.4 (+public defensive monitoring)"
 MAX_BYTES = 2_000_000
@@ -184,7 +184,9 @@ def run_public_monitor():
             continue
         feed_url=str(source.get("url","")).strip()
         if urlparse(feed_url).scheme!="https":
-            results.append({"source":source.get("name","?"),"error":"HTTPS以外のfeedは許可しません"})
+            result={"source":source.get("name","?"),"error":"HTTPS以外のfeedは許可しません"}
+            results.append(result)
+            record_feed_check(source.get("id",feed_url), result["source"], "error", error=result["error"])
             continue
         try:
             response=session.get(feed_url,timeout=20,stream=True)
@@ -240,9 +242,14 @@ def run_public_monitor():
                         )
                         if enqueue_notification(item_id,message):
                             print("Slack RSS alert queued:", item["title"][:120])
-            results.append({"source":source.get("name","?"),"items":len(entries),"new_alerts":new_count})
+            result={"source":source.get("name","?"),"items":len(entries),"new_alerts":new_count}
+            results.append(result)
+            record_feed_check(source.get("id",feed_url), result["source"], "ok",
+                              item_count=len(entries), new_alerts=new_count)
         except Exception as exc:
-            results.append({"source":source.get("name","?"),"error":str(exc)[:300]})
+            error=str(exc)[:300]
+            results.append({"source":source.get("name","?"),"error":error})
+            record_feed_check(source.get("id",feed_url), source.get("name","?"), "error", error=error)
     print("Public OSINT:",results)
     return results
 

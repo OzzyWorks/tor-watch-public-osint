@@ -35,6 +35,7 @@ pages=[]
 events=[]
 threat_alerts=[]
 site_health=[]
+feed_health=[]
 intelligence_discoveries=[]
 intelligence_incidents=[]
 if DB.exists():
@@ -69,6 +70,14 @@ if DB.exists():
                 ORDER BY checked_at DESC LIMIT 6""",(item["url"],)).fetchall()
             item["history"]=[dict(x) for x in history]
             item.update(classify_site_recovery(item))
+    except sqlite3.OperationalError:
+        pass
+    try:
+        rows=con.execute("""SELECT source_id,name,status,item_count,new_alerts,error,
+            checked_at,last_success_at,consecutive_errors FROM feed_checks
+            ORDER BY CASE WHEN status='error' THEN 0 ELSE 1 END,
+            consecutive_errors DESC,name""").fetchall()
+        feed_health=[dict(r) for r in rows]
     except sqlite3.OperationalError:
         pass
     try:
@@ -120,7 +129,7 @@ legacy_discoveries=detect_discoveries(incidents,actor_profiles)
 OUT.write_text(json.dumps({
     "updated_at":datetime.now(timezone.utc).isoformat(),
     "pages":pages,"events":events,"threat_alerts":threat_alerts,
-    "site_health":site_health,
+    "site_health":site_health,"feed_health":feed_health,
     "company_radar":company_radar,"group_activity":group_activity,
     "incident_correlations":incident_correlations,"company_timeline":company_timeline,
     "intelligence_discoveries":intelligence_discoveries,"intelligence_incidents":intelligence_incidents,

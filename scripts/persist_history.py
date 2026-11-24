@@ -133,6 +133,26 @@ def merge_databases(remote_path, local_path, output_path):
         error TEXT NOT NULL DEFAULT '', checked_at TEXT NOT NULL,
         UNIQUE(url, checked_at))""")
     con.execute("CREATE INDEX IF NOT EXISTS idx_site_check_history_url_time ON site_check_history(url, checked_at DESC)")
+    con.execute("""CREATE TABLE IF NOT EXISTS feed_checks(
+        source_id TEXT PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL,
+        item_count INTEGER NOT NULL DEFAULT 0, new_alerts INTEGER NOT NULL DEFAULT 0,
+        error TEXT NOT NULL DEFAULT '', checked_at TEXT NOT NULL,
+        last_success_at TEXT, consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
+    try:
+        feed_rows=local.execute("""SELECT source_id,name,status,item_count,new_alerts,error,
+            checked_at,last_success_at,consecutive_errors FROM feed_checks""").fetchall()
+    except sqlite3.OperationalError:
+        feed_rows=[]
+    for row in feed_rows:
+        con.execute("""INSERT INTO feed_checks
+            (source_id,name,status,item_count,new_alerts,error,checked_at,last_success_at,consecutive_errors)
+            VALUES(?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(source_id) DO UPDATE SET
+            name=excluded.name,status=excluded.status,item_count=excluded.item_count,
+            new_alerts=excluded.new_alerts,error=excluded.error,checked_at=excluded.checked_at,
+            last_success_at=excluded.last_success_at,consecutive_errors=excluded.consecutive_errors
+            WHERE COALESCE(excluded.checked_at,'') >= COALESCE(feed_checks.checked_at,'')""",
+            tuple(row))
 
     # Keep the newest observation for each monitored URL.
     for row in local.execute("SELECT url,title,sha256,text,risk,reasons,checked_at FROM pages"):

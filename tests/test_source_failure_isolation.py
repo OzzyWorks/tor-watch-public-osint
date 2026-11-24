@@ -53,6 +53,7 @@ class SourceFailureIsolationTests(unittest.TestCase):
                      "assets": {"names": ["Example Corp"]}
                  }), \
                  patch.object(threat_intel.requests, "Session", return_value=fake_session), \
+                 patch.object(threat_intel, "record_feed_check") as record_health, \
                  patch.object(threat_intel, "add_threat_item", return_value=True), \
                  patch.object(threat_intel, "enqueue_notification", return_value=False):
                 results = threat_intel.run_public_monitor()
@@ -61,6 +62,9 @@ class SourceFailureIsolationTests(unittest.TestCase):
         self.assertEqual(results[1]["source"], "Healthy Feed")
         self.assertEqual(results[1]["new_alerts"], 1)
         self.assertEqual(fake_session.calls, 2)
+        self.assertEqual(record_health.call_count, 2)
+        self.assertEqual(record_health.call_args_list[0].args[2], "error")
+        self.assertEqual(record_health.call_args_list[1].args[2], "ok")
 
 
 if __name__ == "__main__":

@@ -81,6 +81,9 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <summary><h2>🛰️ 監視状況</h2><span class="disclosure-hint">クリックして取得状況を表示</span></summary>
 <div class="sub">取得状態は脅威リスクと別指標です。未取得ページはリスク採点から除外します。履歴ドットは履歴機能導入後の記録（最大6回）で、連続失敗回数は導入前の監視記録を引き継いでいる場合があります。</div>
 <div id="siteHealth"></div>
+<h3 style="font-size:14px;margin:22px 0 8px">RSS / Atom 情報源の取得状況</h3>
+<div class="sub">公開情報フィードの取得成否・記事件数・新規アラート件数です。取得エラーは監視対象企業のリスクを意味しません。</div>
+<div id="feedHealth"></div>
 </details>
 </section>
 
@@ -242,6 +245,7 @@ function render(){
  renderCompanyRadar();
  renderGroupActivity();
  renderSiteHealth();
+ renderFeedHealth();
  const health=DATA.site_health||[];
  const counts=[["監視サイト",health.length||"—","blue"],["取得エラー",health.length?health.filter(x=>x.status==="error").length:"—","warning"],["CRITICAL",p.filter(x=>x.risk>=85).length,"red"],["HIGH",p.filter(x=>x.risk>=70&&x.risk<85).length,"orange"],["MEDIUM以下",p.filter(x=>x.risk<70).length,"green"]];
  document.getElementById("cards").innerHTML=counts.map(x=>'<div class="card"><div class="sub">'+x[0]+'</div><div class="num '+x[2]+'">'+x[1]+'</div></div>').join("");
@@ -280,6 +284,25 @@ function renderSiteHealth(){
      '<div class="meta">最終確認 '+esc(checked)+'<br>最終成功 '+esc(lastSuccess)+'<br>'+(failed?"連続失敗 "+(x.consecutive_errors||0)+"回":"連続失敗なし")+'</div>'+
      '<div class="meta"><strong>'+esc(recoveryLabel)+'</strong><br>'+esc(recoveryNote)+'<br>'+detail+historyHtml+'</div></div>';
  }).join("")||'<div class="empty">取得状況の記録がありません。</div>';
+}
+function renderFeedHealth(){
+ const items=DATA.feed_health||[];
+ const host=document.getElementById("feedHealth");
+ if(!host)return;
+ const ok=items.filter(x=>x.status==="ok").length;
+ const failed=items.length-ok;
+ const summary='<div class="meta" style="margin:8px 0 12px">情報源 '+items.length+'件 · 正常 '+ok+'件 · エラー '+failed+'件</div>';
+ const rows=items.map(x=>{
+  const failed=x.status!=="ok";
+  const checked=x.checked_at?new Date(x.checked_at).toLocaleString("ja-JP"):"—";
+  const last=x.last_success_at?new Date(x.last_success_at).toLocaleString("ja-JP"):"成功履歴なし";
+  return '<div class="health-row"><div><div class="title">'+esc(x.name||x.source_id)+'</div><div class="meta">'+esc(x.source_id)+'</div></div>'+
+   '<div><span class="badge '+(failed?"unavailable":"normal")+'">'+(failed?"取得エラー":"取得成功")+'</span></div>'+
+   '<div class="meta">最終確認 '+esc(checked)+'<br>最終成功 '+esc(last)+'<br>連続失敗 '+Number(x.consecutive_errors||0)+'回</div>'+
+   '<div class="meta">取得記事 '+Number(x.item_count||0)+'件 · 新規アラート '+Number(x.new_alerts||0)+'件'+
+   (failed?'<details><summary>エラー詳細</summary>'+esc(x.error||"詳細なし")+'</details>':"")+'</div></div>';
+ }).join("");
+ host.innerHTML=items.length?summary+rows:'<div class="empty">RSS情報源の取得履歴はまだありません。次回の定期実行後に表示されます。</div>';
 }
 function renderCompanyTimeline(){
  const groups=DATA.company_timeline||[];

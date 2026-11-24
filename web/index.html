@@ -218,6 +218,10 @@ function renderIntelligence(){
  if(incidentHost){
   incidentHost.innerHTML=incidents.slice(0,30).map(x=>{
    const types=(x.event_types||[]).join("・")||"種別未分類";
+   const evidenceLabels={official:"企業公式",government_advisory:"政府注意喚起",media_report:"報道",attacker_claim:"攻撃者の主張",unverified:"未確認"};
+   const assertionLabels={official:"企業公式",official_candidate:"公式発表候補",attacker_claim:"攻撃者の主張",media_report:"報道",government_advisory:"政府注意喚起",unverified:"未確認"};
+   const evidenceTypes=String(x.evidence_types||"").split(",").filter(Boolean).map(v=>evidenceLabels[v]||v);
+   const assertionTypes=String(x.assertion_types||"").split(",").filter(Boolean).map(v=>assertionLabels[v]||v);
    const timeline=(x.timeline||[]).map(t=>{
     const href=String(t.url||""), safe=/^https:\/\//i.test(href)?href:"";
     const assertion={official:"企業公式",official_candidate:"公式発表候補",attacker_claim:"攻撃者の主張",media_report:"報道",government_advisory:"政府注意喚起"}[t.assertion_type]||"未確認";
@@ -228,7 +232,10 @@ function renderIntelligence(){
    return '<div class="row"><div><div class="title">'+esc(x.victim||"対象未特定")+'</div>'+
     '<div class="meta">'+esc(types)+' · '+esc(x.incident_id)+'</div></div>'+
     '<div><span class="badge unavailable">調査候補</span></div>'+
-    '<div class="meta">観測 '+Number(x.observation_count||0)+'件 · 証拠 '+Number(x.evidence_count||0)+'件 · 根拠評価 '+Number(x.confidence||0)+'/100</div>'+
+    '<div class="meta">観測 '+Number(x.observation_count||0)+'件 · 証拠 '+Number(x.evidence_count||0)+'件 · 独立情報源 '+Number(x.independent_source_count||0)+'系統</div>'+
+    '<div class="meta">証拠の充実度 '+Number(x.confidence||0)+'/100（発生確率ではありません）</div>'+
+    (evidenceTypes.length?'<div class="meta">証拠の種類：'+esc(evidenceTypes.join("・"))+'</div>':'')+
+    (assertionTypes.length?'<div class="meta">情報の立場：'+esc(assertionTypes.join("・"))+'</div>':'')+
     '<div class="meta">'+esc(x.detected_at||x.published_at||x.first_seen_at||"日時不明")+'</div>'+
     (timelineHtml?'<div style="grid-column:1/-1">'+timelineHtml+'</div>':'')+'</div>';
   }).join("")||'<div class="empty">調査候補はまだありません。</div>';

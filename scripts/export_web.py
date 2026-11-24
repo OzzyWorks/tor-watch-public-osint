@@ -97,12 +97,20 @@ if DB.exists():
     try:
         rows=con.execute("""SELECT i.incident_id,i.victim,i.country,i.sector,i.event_types_json,
             i.status,i.severity,i.confidence,i.first_seen_at,i.published_at,i.detected_at,
-            i.summary,COUNT(DISTINCT io.observation_id) AS observation_count,
-            COUNT(DISTINCT ev.evidence_id) AS evidence_count
+            i.summary,
+            (SELECT COUNT(DISTINCT io.observation_id) FROM incident_observations io
+             WHERE io.incident_id=i.incident_id) AS observation_count,
+            (SELECT COUNT(*) FROM evidence ev WHERE ev.incident_id=i.incident_id) AS evidence_count,
+            (SELECT COUNT(DISTINCT NULLIF(ev.source_independence_group,''))
+             FROM evidence ev WHERE ev.incident_id=i.incident_id) AS independent_source_count,
+            (SELECT GROUP_CONCAT(DISTINCT ev.evidence_type) FROM evidence ev
+             WHERE ev.incident_id=i.incident_id) AS evidence_types,
+            (SELECT GROUP_CONCAT(DISTINCT o.assertion_type)
+             FROM incident_observations io JOIN observations o
+               ON o.observation_id=io.observation_id
+             WHERE io.incident_id=i.incident_id) AS assertion_types
             FROM incidents i
-            LEFT JOIN incident_observations io ON io.incident_id=i.incident_id
-            LEFT JOIN evidence ev ON ev.incident_id=i.incident_id
-            GROUP BY i.incident_id ORDER BY COALESCE(i.detected_at,i.first_seen_at,i.published_at) DESC
+            ORDER BY COALESCE(i.detected_at,i.first_seen_at,i.published_at) DESC
             LIMIT 50""").fetchall()
         for r in rows:
             item=dict(r)

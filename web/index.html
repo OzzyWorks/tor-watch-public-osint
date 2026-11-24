@@ -8,7 +8,7 @@
 *{box-sizing:border-box}body{margin:0;background:#090d18;color:#e9eef8;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .wrap{max-width:1200px;margin:auto;padding:28px 20px}.brand{font-size:30px;font-weight:900;letter-spacing:.04em}.sub{color:#8490a8;font-size:13px}
 .header{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:25px}
-.status{padding:7px 11px;border:1px solid #293550;border-radius:999px;font-size:12px;color:#9aa8c2}
+.status{padding:7px 11px;border:1px solid #293550;border-radius:999px;font-size:12px;color:#9aa8c2}.status.stale{border-color:#8a5b27;color:#ffd08a;background:#2b2117}
 .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
 .card,.panel{background:#121827;border:1px solid #222d45;border-radius:15px}.card{padding:18px}.num{font-size:32px;font-weight:850;margin-top:5px}
 .red{color:#ff7380}.warning{color:#ffc568}.orange{color:#ffc568}.green{color:#6ed9a0}.blue{color:#7cb8ff}
@@ -128,6 +128,18 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 
 <script>
 let DATA={pages:[],events:[],site_health:[],intelligence_discoveries:[],intelligence_incidents:[]};
+let refreshTimer=null;
+function updateFreshness(){
+ const status=document.getElementById("status");
+ const updated=new Date(DATA.updated_at);
+ if(Number.isNaN(updated.getTime())){status.textContent="更新日時を確認できません";return;}
+ const age=Math.max(0,Date.now()-updated.getTime());
+ const minutes=Math.floor(age/60000);
+ const relative=minutes<1?"たった今":minutes<60?minutes+"分前":minutes<1440?Math.floor(minutes/60)+"時間前":Math.floor(minutes/1440)+"日前";
+ status.textContent="最終更新 "+updated.toLocaleString("ja-JP")+" · "+relative;
+ status.classList.toggle("stale",age>8*60*60*1000);
+ status.title="5分ごとに最新データを自動確認します。8時間以上更新がない場合は注意表示します。";
+}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const level=r=>r>=85?["CRITICAL","critical"]:r>=70?["HIGH","high"]:r>=50?["MEDIUM","high"]:["LOW","normal"];
 const readableReason=s=>{
@@ -363,7 +375,7 @@ async function load(attempt=0){
  const interpretation=document.getElementById("executiveInterpretation");
  const action=document.getElementById("executiveAction");
  retry.hidden=true;
- status.textContent="データ読み込み中…";
+ if(!DATA.updated_at)status.textContent="データ読み込み中…";
  headline.textContent="サマリーを読み込み中…";
  interpretation.textContent="";
  action.textContent="";
@@ -378,9 +390,11 @@ async function load(attempt=0){
   if(!next||!Array.isArray(next.pages)||!Array.isArray(next.events)||!next.updated_at){
    throw new Error("データ形式が不正、または未生成です");
   }
+  const changed=next.updated_at!==DATA.updated_at;
   DATA=next;
-  status.textContent="最終更新 "+new Date(DATA.updated_at).toLocaleString("ja-JP");
-  render();
+  updateFreshness();
+  if(changed)render();
+  if(refreshTimer===null)refreshTimer=setInterval(()=>load(),5*60*1000);
  }catch(e){
   const message=e.name==="AbortError"?"15秒以内に応答がありません。通信またはGitHub Pagesの応答を確認してください。":(e.message||"不明なエラー");
   if(attempt===0){

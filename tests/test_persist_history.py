@@ -30,10 +30,14 @@ class PersistHistoryTests(unittest.TestCase):
                 con.commit()
                 con.close()
             con = sqlite3.connect(remote)
+            con.execute("""CREATE TABLE feed_checks(source_id TEXT PRIMARY KEY,name TEXT NOT NULL,status TEXT NOT NULL,item_count INTEGER NOT NULL DEFAULT 0,new_alerts INTEGER NOT NULL DEFAULT 0,error TEXT NOT NULL DEFAULT '',checked_at TEXT NOT NULL,last_success_at TEXT,consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
+            con.execute("INSERT INTO feed_checks VALUES('feed-old','Old Feed','ok',12,0,'','2026-01-01','2026-01-01',0)")
             con.execute("INSERT INTO pages(url,title,checked_at) VALUES('https://old.example','Old','2026-01-01')")
             con.commit()
             con.close()
             con = sqlite3.connect(local)
+            con.execute("""CREATE TABLE feed_checks(source_id TEXT PRIMARY KEY,name TEXT NOT NULL,status TEXT NOT NULL,item_count INTEGER NOT NULL DEFAULT 0,new_alerts INTEGER NOT NULL DEFAULT 0,error TEXT NOT NULL DEFAULT '',checked_at TEXT NOT NULL,last_success_at TEXT,consecutive_errors INTEGER NOT NULL DEFAULT 0)""")
+            con.execute("INSERT INTO feed_checks VALUES('feed-new','New Feed','error',0,0,'timeout','2026-01-02','2026-01-01',1)")
             con.execute("INSERT INTO pages(url,title,checked_at) VALUES('https://new.example','New','2026-01-02')")
             con.commit()
             con.close()
@@ -62,6 +66,8 @@ class PersistHistoryTests(unittest.TestCase):
             merge_databases(remote, local, output)
 
             con = sqlite3.connect(output)
+            feeds = {row[0]: row[1] for row in con.execute("SELECT source_id,status FROM feed_checks")}
+            self.assertEqual(feeds, {"feed-old": "ok", "feed-new": "error"})
             pages = {row[0] for row in con.execute("SELECT url FROM pages")}
             self.assertEqual(pages, {"https://old.example", "https://new.example"})
             self.assertEqual(con.execute("SELECT COUNT(*) FROM observations").fetchone()[0], 1)

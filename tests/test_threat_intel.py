@@ -28,6 +28,15 @@ class ThreatIntelTests(unittest.TestCase):
         self.assertIn("SBI SECURITIES Co., Ltd.",_matches("SBI SECURITIES Co., Ltd. incident",assets))
 
 
+    def test_rakuten_short_japanese_alias_matches_news_headline(self):
+        assets = {"names": ["楽天証券株式会社", "楽天証券", "Rakuten Securities"]}
+        headline = "楽天証券漏えい、顧客情報の一部が外部流出"
+        matches = _matches(headline, assets)
+        self.assertIn("楽天証券", matches)
+        risk, reasons = _risk_near_matches(headline, matches)
+        self.assertEqual(risk, 75)
+        self.assertIn("company_context:楽天証券", reasons)
+
     def test_english_legal_suffix_aliases_are_deduplicated(self):
         assets={"names":[
             "Sekisui House","SEKISUI HOUSE, LTD.",

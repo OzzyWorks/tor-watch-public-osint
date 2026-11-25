@@ -74,6 +74,12 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div class="sub">公開観測から自動生成した調査候補です。同じ企業・イベント種別・日付の一致は、同一事件の確定ではありません。</div>
 <div id="intelligenceIncidents"></div>
 </section>
+<section class="panel">
+<h2>📰 同一事件・転載の可能性</h2>
+<div class="sub">見出しやURLが非常に近い記事の組み合わせです。自動で統合せず候補として表示します。同じ情報源グループ内の記事は独立した裏付けとして数えません。</div>
+<div id="duplicateCandidates"></div>
+</section>
+
 <section class="cards" id="cards"></section>
 
 <section class="panel">
@@ -130,7 +136,7 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 </div>
 
 <script>
-let DATA={pages:[],events:[],site_health:[],intelligence_discoveries:[],intelligence_incidents:[]};
+let DATA={pages:[],events:[],site_health:[],intelligence_discoveries:[],intelligence_incidents:[],duplicate_candidates:[]};
 let refreshTimer=null;
 function updateFreshness(){
  const status=document.getElementById("status");
@@ -240,6 +246,23 @@ function renderIntelligence(){
     (timelineHtml?'<div style="grid-column:1/-1">'+timelineHtml+'</div>':'')+'</div>';
   }).join("")||'<div class="empty">調査候補はまだありません。</div>';
  }
+}
+
+function renderDuplicateCandidates(){
+ const items=DATA.duplicate_candidates||[];
+ const host=document.getElementById("duplicateCandidates");
+ if(!host)return;
+ host.innerHTML=items.slice(0,30).map(x=>{
+  const observations=(x.observations||[]).map(o=>{
+   const href=String(o.url||""), safe=/^https:\/\//i.test(href)?href:"";
+   return '<div class="change-entry"><strong>'+esc(o.source_name||o.source_id||"情報源不明")+'</strong> · '+esc(o.published_at||"日時不明")+
+    '<div class="title">'+(safe?'<a href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+esc(o.title||"記事")+'</a>':esc(o.title||"記事"))+'</div></div>';
+  }).join("");
+  const reason=x.match_reason==="exact_canonical_url"?"正規化URLが一致":"見出し類似度 "+(Number(x.title_similarity||0)*100).toFixed(1)+"%";
+  const provenance=x.same_provenance_group?"同じ情報源グループ（独立した裏付けではありません）":"異なる情報源グループ";
+  return '<div class="exec-item"><div class="title">'+esc(reason)+' · '+esc(x.decision||"candidate")+'</div>'+observations+
+   '<div class="meta">'+esc(provenance)+' · 候補ID '+esc(x.pair_key||"")+'</div></div>';
+ }).join("")||'<div class="empty">重複・転載の可能性がある記事の組み合わせはありません。</div>';
 }
 
 function render(){

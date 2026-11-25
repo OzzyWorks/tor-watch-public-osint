@@ -87,6 +87,18 @@ def find_duplicate_candidates(limit: int = 300, db_path=None) -> list[dict]:
                     and left.get("provenance_group") == right.get("provenance_group")
                 ),
                 "decision": decision or "candidate",
+                "observations": [
+                    {
+                        "observation_id": item["observation_id"],
+                        "title": item.get("title") or "",
+                        "source_id": item.get("source_id") or "",
+                        "source_name": item.get("source_name") or item.get("source_id") or "",
+                        "url": item.get("url") or "",
+                        "published_at": item.get("published_at") or item.get("observed_at") or "",
+                        "provenance_group": item.get("provenance_group") or "",
+                    }
+                    for item in (left, right)
+                ],
             })
     return sorted(results, key=lambda item: (
         item["match_reason"] != "exact_canonical_url", -item["title_similarity"], item["pair_key"]

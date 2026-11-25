@@ -29,6 +29,36 @@ sources:
     language: ja
     provenance_group: jvn
     update_interval_minutes: 360
+  - id: itmedia_security
+    name: ITmedia NEWS セキュリティ
+    url: https://rss.itmedia.co.jp/rss/2.0/news_security.xml
+    enabled: true
+    category: japanese_security_media
+    source_class: media
+    reliability: high
+    language: ja
+    provenance_group: itmedia_news
+    update_interval_minutes: 360
+  - id: itmedia_domestic
+    name: ITmedia NEWS 国内
+    url: https://rss.itmedia.co.jp/rss/2.0/news_domestic.xml
+    enabled: true
+    category: japanese_security_media
+    source_class: media
+    reliability: high
+    language: ja
+    provenance_group: itmedia_news
+    update_interval_minutes: 360
+  - id: scannetsecurity
+    name: ScanNetSecurity
+    url: https://scan.netsecurity.ne.jp/rss/index.rdf
+    enabled: true
+    category: japanese_security_media
+    source_class: media
+    reliability: high
+    language: ja
+    provenance_group: scannetsecurity
+    update_interval_minutes: 360
   - id: bleepingcomputer
     name: BleepingComputer
     url: https://www.bleepingcomputer.com/feed/
@@ -69,7 +99,6 @@ sources:
     language: en
     provenance_group: darkreading
     update_interval_minutes: 360
-
   - id: cisa_advisories
     name: CISA All Cybersecurity Advisories
     url: https://www.cisa.gov/cybersecurity-advisories/all.xml

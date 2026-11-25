@@ -17,6 +17,14 @@ class SourceInventoryTests(unittest.TestCase):
             with self.subTest(source=source.get("id")):
                 self.assertTrue(str(source.get("url", "")).startswith("https://"))
 
+    def test_japanese_incident_news_sources_are_enabled(self):
+        by_id = {source["id"]: source for source in self.sources}
+        for source_id in ("itmedia_security", "itmedia_domestic", "scannetsecurity"):
+            with self.subTest(source=source_id):
+                self.assertTrue(by_id[source_id]["enabled"])
+                self.assertEqual(by_id[source_id]["language"], "ja")
+                self.assertEqual(by_id[source_id]["source_class"], "media")
+
     def test_every_source_has_provenance_and_classification(self):
         required = ("category", "source_class", "reliability", "language", "provenance_group")
         for source in self.sources:
@@ -31,6 +39,7 @@ class SourceInventoryTests(unittest.TestCase):
         self.assertTrue({
             "cisa_advisories", "securityaffairs", "malwarebytes",
             "cyberscoop", "helpnetsecurity",
+            "itmedia_security", "itmedia_domestic", "scannetsecurity",
         }.issubset(ids))
 
 

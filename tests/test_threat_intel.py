@@ -30,7 +30,7 @@ class ThreatIntelTests(unittest.TestCase):
 
     def test_rakuten_short_japanese_alias_matches_news_headline(self):
         assets = {"names": ["楽天証券株式会社", "楽天証券", "Rakuten Securities"]}
-        headline = "楽天証券漏えい、顧客情報の一部が外部流出"
+        headline = "楽天証券で顧客情報漏えい、個人情報の一部が外部流出"
         matches = _matches(headline, assets)
         self.assertIn("楽天証券", matches)
         risk, reasons = _risk_near_matches(headline, matches)

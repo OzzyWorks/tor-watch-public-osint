@@ -20,6 +20,17 @@
 .exec-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
 .exec-count{padding:10px 12px;background:#0b1221;border:1px solid #25334d;border-radius:10px}
 .exec-count strong{display:block;font-size:23px}.exec-count span{font-size:11px;color:#9aa8c2}
+.activity-chart{margin-top:18px;padding:15px;background:#0d1526;border:1px solid #263550;border-radius:12px}
+.activity-chart-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+.activity-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#aeb9cc}
+.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.activity-row{display:grid;grid-template-columns:82px minmax(0,1fr) 28px;gap:10px;align-items:center;margin:7px 0;font-size:11px;color:#9aa8c2}
+.activity-track{height:12px;border-radius:99px;background:#18243a;overflow:hidden;display:flex}
+.activity-segment{height:100%;min-width:0}
+.activity-total{text-align:right;color:#dce7fa;font-variant-numeric:tabular-nums}
+.activity-foot{font-size:11px;color:#8490a8;margin-top:10px;line-height:1.5}
+@media(max-width:600px){.activity-chart{padding:12px}.activity-row{grid-template-columns:66px minmax(0,1fr) 24px;gap:7px}.activity-chart-head{align-items:flex-start;flex-direction:column}}
+
 .exec-item{padding:12px 0;border-top:1px solid #293550}
 .change-summary{margin-top:16px;padding-top:14px;border-top:1px solid #293550}
 .change-counts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
@@ -61,6 +72,7 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div id="executiveInterpretation" class="executive-copy"></div>
 <div id="executiveAction" class="executive-action"></div>
 <div id="executiveCounts" class="exec-counts"></div>
+<div id="activityTrend" class="activity-chart" aria-label="直近14日間の監視イベント推移"></div>
 <div id="executiveItems"></div>
 <div id="executiveScope" class="meta"></div>
 </section>
@@ -201,6 +213,43 @@ function renderExecutiveSummary(){
     (x.recommended_action?'<div class="meta"><strong>次に確認：</strong>'+esc(x.recommended_action)+'</div>':'')+'</div>';
   }).join(""):'<div class="meta" style="margin-top:14px">優先候補として表示する情報はありません。</div>');
  document.getElementById("executiveScope").textContent=s.scope_note||"";
+ renderActivityTrend();
+}
+
+function renderActivityTrend(){
+ const host=document.getElementById("activityTrend");
+ if(!host)return;
+ const days=[];
+ const today=new Date();
+ for(let i=13;i>=0;i--){
+  const d=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()-i));
+  days.push({key:d.toISOString().slice(0,10),label:(d.getUTCMonth()+1)+"/"+d.getUTCDate(),new:0,changed:0,reclassified:0});
+ }
+ const byDay=new Map(days.map(x=>[x.key,x]));
+ (DATA.events||[]).forEach(event=>{
+  const date=String(event.detected_at||"").slice(0,10);
+  const day=byDay.get(date);
+  if(day&&Object.prototype.hasOwnProperty.call(day,event.event_type))day[event.event_type]++;
+ });
+ const max=Math.max(1,...days.map(x=>x.new+x.changed+x.reclassified));
+ const total=days.reduce((n,x)=>n+x.new+x.changed+x.reclassified,0);
+ host.innerHTML='<div class="activity-chart-head"><strong>直近14日間の監視イベント</strong>'+
+  '<span class="meta">合計 '+total+'件 · 日別</span></div>'+
+  '<div class="activity-legend">'+
+  '<span><i class="legend-dot" style="background:#6ed9a0"></i>新規</span>'+
+  '<span><i class="legend-dot" style="background:#7cb8ff"></i>内容更新</span>'+
+  '<span><i class="legend-dot" style="background:#ffc568"></i>リスク再判定</span></div>'+
+  days.map(x=>{
+   const n=x.new+x.changed+x.reclassified;
+   const width=v=>(v/max*100).toFixed(1);
+   return '<div class="activity-row"><span>'+x.label+'</span><div class="activity-track" role="img" aria-label="'+x.label+' 新規'+x.new+'件、更新'+x.changed+'件、再判定'+x.reclassified+'件">'+
+    '<span class="activity-segment" style="width:'+width(x.new)+'%;background:#6ed9a0"></span>'+
+    '<span class="activity-segment" style="width:'+width(x.changed)+'%;background:#7cb8ff"></span>'+
+    '<span class="activity-segment" style="width:'+width(x.reclassified)+'%;background:#ffc568"></span></div>'+
+    '<strong class="activity-total">'+n+'</strong></div>';
+  }).join("")+
+  '<div class="activity-foot">'+(total?'収集済みイベントの記録件数です。検知件数は実被害件数を意味しません。':'この期間のイベント記録はありません。データ蓄積後に推移が表示されます。')+
+  ' · 表示範囲は直近14日、取得できたイベント最大500件の範囲です。</div>';
 }
 
 function renderIntelligence(){

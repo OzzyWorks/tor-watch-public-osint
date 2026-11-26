@@ -34,6 +34,11 @@ class DuplicateDetectionTests(unittest.TestCase):
         self.assertEqual(len(candidates), 1)
         self.assertEqual(candidates[0]["decision"], "candidate")
         self.assertFalse(candidates[0]["same_provenance_group"])
+        self.assertEqual(len(candidates[0]["observations"]), 2)
+        self.assertEqual(
+            {item["source_name"] for item in candidates[0]["observations"]},
+            {"Media A", "Media B"},
+        )
         con = init(self.db)
         self.assertEqual(con.execute("SELECT COUNT(*) FROM observations").fetchone()[0], 2)
         con.close()

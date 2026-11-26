@@ -14,6 +14,7 @@ import yaml
 from torwatch.analytics import classify_site_recovery, build_company_radar, build_group_activity, build_incident_correlations, build_executive_summary, explain_public_alert, build_company_timeline
 from torwatch.risk import assess_evidence
 from torwatch.incident_timeline import build_incident_timeline
+from torwatch.duplicate_detection import find_duplicate_candidates
 from torwatch.intelligence import normalize_incidents, build_actor_profiles, build_relationships, detect_discoveries
 
 DB=Path("data/history.db")
@@ -124,6 +125,8 @@ if DB.exists():
         pass
     con.close()
 
+duplicate_candidates=find_duplicate_candidates(limit=300, db_path=DB) if DB.exists() else []
+
 group_config=yaml.safe_load(GROUPS.read_text(encoding="utf-8")) if GROUPS.exists() else {"groups":[]}
 company_radar=build_company_radar(pages,events,threat_alerts)
 group_activity=build_group_activity(pages,events,group_config.get("groups",[]))
@@ -141,6 +144,7 @@ OUT.write_text(json.dumps({
     "company_radar":company_radar,"group_activity":group_activity,
     "incident_correlations":incident_correlations,"company_timeline":company_timeline,
     "intelligence_discoveries":intelligence_discoveries,"intelligence_incidents":intelligence_incidents,
+    "duplicate_candidates":duplicate_candidates,
     "intelligence":{"incidents":incidents,"actors":actor_profiles,"relationships":incident_relationships,"discoveries":legacy_discoveries},
     "executive_summary":executive_summary
 },ensure_ascii=False,indent=2),encoding="utf-8")

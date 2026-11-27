@@ -35,7 +35,7 @@
     let out='';
     visible.forEach(l=>{const a=coords[l.left_victim],b=coords[l.right_victim];out+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="#657b9e" stroke-width="1.5" opacity=".62"><title>'+esc(l.relation)+'：'+esc(l.explanation)+'</title></line>';});
     names.forEach((n,i)=>{const p=coords[n];out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="'+palette[i%palette.length]+'" stroke="#eaf1ff" stroke-width="1"/><text x="'+p.x+'" y="'+(p.y+20)+'" text-anchor="middle" fill="#d8e2f3" font-size="11">'+esc(n.length>13?n.slice(0,12)+"…":n)+'</text>';});
-    host("vizNetwork").innerHTML=svgWrap(out,350)+'<div class="viz-legend"><span><i style="background:#657b9e"></i>分析エンジンが抽出した関連候補</span><span>'+names.length+'企業・'+visible.length+'関係</span></div><p class="viz-note">線は共通企業・攻撃種別・登録済み公開サイト等に基づく候補関係です。攻撃主体や同一事件の確定を示しません。</p>';
+    host("vizNetwork").innerHTML=svgWrap(out,350)+'<div class="viz-legend"><span><i style="background:#657b9e"></i>分析エンジンが抽出した関連候補</span><span>'+names.length+'企業・'+visible.length+'関係</span></div><p class="viz-note">線は共通企業・攻撃種別・登録済み公開サイト等に基づく候補関係です。攻撃主体や同一事件の確定を示しません。</p>'+'<div class="viz-relations">'+visible.slice(0,12).map(l=>'<div><strong>'+esc(l.left_victim)+' ↔ '+esc(l.right_victim)+'</strong><span>'+esc(l.relation)+' · '+esc(l.explanation)+'</span></div>').join("")+'</div>';
   }
 
   function renderSectors(data){

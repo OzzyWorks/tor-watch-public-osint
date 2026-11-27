@@ -20,6 +20,17 @@
 .exec-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
 .exec-count{padding:10px 12px;background:#0b1221;border:1px solid #25334d;border-radius:10px}
 .exec-count strong{display:block;font-size:23px}.exec-count span{font-size:11px;color:#9aa8c2}
+.activity-chart{margin-top:18px;padding:15px;background:#0d1526;border:1px solid #263550;border-radius:12px}
+.activity-chart-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+.activity-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#aeb9cc}
+.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.activity-row{display:grid;grid-template-columns:82px minmax(0,1fr) 28px;gap:10px;align-items:center;margin:7px 0;font-size:11px;color:#9aa8c2}
+.activity-track{height:12px;border-radius:99px;background:#18243a;overflow:hidden;display:flex}
+.activity-segment{height:100%;min-width:0}
+.activity-total{text-align:right;color:#dce7fa;font-variant-numeric:tabular-nums}
+.activity-foot{font-size:11px;color:#8490a8;margin-top:10px;line-height:1.5}
+@media(max-width:600px){.activity-chart{padding:12px}.activity-row{grid-template-columns:66px minmax(0,1fr) 24px;gap:7px}.activity-chart-head{align-items:flex-start;flex-direction:column}}
+
 .exec-item{padding:12px 0;border-top:1px solid #293550}
 .change-summary{margin-top:16px;padding-top:14px;border-top:1px solid #293550}
 .change-counts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
@@ -46,6 +57,18 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 .empty{padding:24px 0;color:#7f8ca5}
 @media(max-width:1000px){.cards{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.alert{grid-template-columns:80px 1fr}.alert>:last-child{grid-column:2}.row{grid-template-columns:1fr 80px}.row>:nth-child(n+3){grid-column:1/-1}.health-row{grid-template-columns:1fr 100px}.health-row>:nth-child(n+3){grid-column:1/-1}}
+
+.viz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0 0 18px}
+.viz-panel{background:#121827;border:1px solid #222d45;border-radius:15px;padding:18px;min-width:0}
+.viz-panel h2{font-size:16px;margin:0 0 6px}.viz-panel .sub{min-height:38px}
+.viz-panel svg{width:100%;height:auto;display:block;overflow:visible}
+.viz-empty{padding:26px 10px;color:#8d9bb4;font-size:13px;line-height:1.7}
+.viz-legend{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#9aa8c2;font-size:11px;margin-top:8px}
+.viz-legend span{display:inline-flex;align-items:center;gap:6px}
+.viz-legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.viz-note{font-size:11px;color:#8d9bb4;line-height:1.6;margin:8px 0 0}
+.viz-relations{display:grid;gap:7px;margin-top:10px}.viz-relations>div{padding:8px 10px;background:#0c1423;border-radius:8px;border:1px solid #25334d}.viz-relations strong{display:block;font-size:12px;color:#dce7fa}.viz-relations span{display:block;font-size:11px;line-height:1.5;color:#9aa8c2;margin-top:3px}
+@media(max-width:760px){.viz-grid{grid-template-columns:1fr}.viz-panel{padding:14px}.viz-panel .sub{min-height:0;margin-bottom:8px}}
 </style>
 </head>
 <body>
@@ -61,8 +84,16 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div id="executiveInterpretation" class="executive-copy"></div>
 <div id="executiveAction" class="executive-action"></div>
 <div id="executiveCounts" class="exec-counts"></div>
+<div id="activityTrend" class="activity-chart" aria-label="直近14日間の監視イベント推移"></div>
 <div id="executiveItems"></div>
 <div id="executiveScope" class="meta"></div>
+</section>
+<section class="viz-grid" aria-label="脅威情報の可視化">
+ <section class="viz-panel"><h2>📈 直近14日の検知推移</h2><div class="sub">日別の監視イベント数。ゼロ件の日も表示します。</div><div id="vizTrend"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel"><h2>🏢 企業別イベントランキング</h2><div class="sub">企業名が一致した監視イベント数。被害件数や被害確率ではありません。</div><div id="vizCompanies"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel"><h2>🏭 業種別インシデント分布</h2><div class="sub">保存済みインシデントの業種情報がある場合のみ集計。推測で補完しません。</div><div id="vizSectors"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel"><h2>🕵️ 攻撃グループ別の更新状況</h2><div class="sub">登録済み公開サイトにおける更新ページ数。攻撃成功数ではありません。</div><div id="vizGroups"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel" style="grid-column:1/-1"><h2>🧩 インシデント関連ネットワーク</h2><div class="sub">分析エンジンが抽出した企業間の関連候補と、その根拠を表示します。</div><div id="vizNetwork"><div class="viz-empty">データ読み込み中…</div></div></section>
 </section>
 <section class="panel">
 <h2>💡 新しい発見・傾向</h2>
@@ -201,6 +232,43 @@ function renderExecutiveSummary(){
     (x.recommended_action?'<div class="meta"><strong>次に確認：</strong>'+esc(x.recommended_action)+'</div>':'')+'</div>';
   }).join(""):'<div class="meta" style="margin-top:14px">優先候補として表示する情報はありません。</div>');
  document.getElementById("executiveScope").textContent=s.scope_note||"";
+ renderActivityTrend();
+}
+
+function renderActivityTrend(){
+ const host=document.getElementById("activityTrend");
+ if(!host)return;
+ const days=[];
+ const today=new Date();
+ for(let i=13;i>=0;i--){
+  const d=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()-i));
+  days.push({key:d.toISOString().slice(0,10),label:(d.getUTCMonth()+1)+"/"+d.getUTCDate(),new:0,changed:0,reclassified:0});
+ }
+ const byDay=new Map(days.map(x=>[x.key,x]));
+ (DATA.events||[]).forEach(event=>{
+  const date=String(event.detected_at||"").slice(0,10);
+  const day=byDay.get(date);
+  if(day&&Object.prototype.hasOwnProperty.call(day,event.event_type))day[event.event_type]++;
+ });
+ const max=Math.max(1,...days.map(x=>x.new+x.changed+x.reclassified));
+ const total=days.reduce((n,x)=>n+x.new+x.changed+x.reclassified,0);
+ host.innerHTML='<div class="activity-chart-head"><strong>直近14日間の監視イベント</strong>'+
+  '<span class="meta">合計 '+total+'件 · 日別</span></div>'+
+  '<div class="activity-legend">'+
+  '<span><i class="legend-dot" style="background:#6ed9a0"></i>新規</span>'+
+  '<span><i class="legend-dot" style="background:#7cb8ff"></i>内容更新</span>'+
+  '<span><i class="legend-dot" style="background:#ffc568"></i>リスク再判定</span></div>'+
+  days.map(x=>{
+   const n=x.new+x.changed+x.reclassified;
+   const width=v=>(v/max*100).toFixed(1);
+   return '<div class="activity-row"><span>'+x.label+'</span><div class="activity-track" role="img" aria-label="'+x.label+' 新規'+x.new+'件、更新'+x.changed+'件、再判定'+x.reclassified+'件">'+
+    '<span class="activity-segment" style="width:'+width(x.new)+'%;background:#6ed9a0"></span>'+
+    '<span class="activity-segment" style="width:'+width(x.changed)+'%;background:#7cb8ff"></span>'+
+    '<span class="activity-segment" style="width:'+width(x.reclassified)+'%;background:#ffc568"></span></div>'+
+    '<strong class="activity-total">'+n+'</strong></div>';
+  }).join("")+
+  '<div class="activity-foot">'+(total?'収集済みイベントの記録件数です。検知件数は実被害件数を意味しません。':'この期間のイベント記録はありません。データ蓄積後に推移が表示されます。')+
+  ' · 表示範囲は直近14日、取得できたイベント最大500件の範囲です。</div>';
 }
 
 function renderIntelligence(){
@@ -267,6 +335,7 @@ function renderDuplicateCandidates(){
 
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
+ if(window.renderVisualizations)window.renderVisualizations(DATA);
  renderExecutiveSummary();
  renderIntelligence();
  renderThreatAlerts();
@@ -466,5 +535,6 @@ async function load(attempt=0){
 }
 load();
 </script>
+<script src="dashboard-visuals.js"></script>
 </body>
 </html>

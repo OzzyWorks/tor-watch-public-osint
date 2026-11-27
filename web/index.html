@@ -327,6 +327,7 @@ function renderDuplicateCandidates(){
 
 function render(){
  const p=DATA.pages||[], e=DATA.events||[];
+ if(window.renderVisualizations)window.renderVisualizations(DATA);
  renderExecutiveSummary();
  renderIntelligence();
  renderThreatAlerts();
@@ -526,5 +527,6 @@ async function load(attempt=0){
 }
 load();
 </script>
+<script src="dashboard-visuals.js"></script>
 </body>
 </html>

@@ -66,7 +66,8 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 .viz-legend{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#9aa8c2;font-size:11px;margin-top:8px}
 .viz-legend span{display:inline-flex;align-items:center;gap:6px}
 .viz-legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
-.viz-note{font-size:11px;color:#8d9bb4;line-height:1.6;margin:8px 0 0}\n.viz-relations{display:grid;gap:7px;margin-top:10px}.viz-relations>div{padding:8px 10px;background:#0c1423;border-radius:8px;border:1px solid #25334d}.viz-relations strong{display:block;font-size:12px;color:#dce7fa}.viz-relations span{display:block;font-size:11px;line-height:1.5;color:#9aa8c2;margin-top:3px}
+.viz-note{font-size:11px;color:#8d9bb4;line-height:1.6;margin:8px 0 0}
+.viz-relations{display:grid;gap:7px;margin-top:10px}.viz-relations>div{padding:8px 10px;background:#0c1423;border-radius:8px;border:1px solid #25334d}.viz-relations strong{display:block;font-size:12px;color:#dce7fa}.viz-relations span{display:block;font-size:11px;line-height:1.5;color:#9aa8c2;margin-top:3px}
 @media(max-width:760px){.viz-grid{grid-template-columns:1fr}.viz-panel{padding:14px}.viz-panel .sub{min-height:0;margin-bottom:8px}}
 </style>
 </head>
@@ -86,6 +87,13 @@ button{background:#1c2943;color:#dce7fa;border:1px solid #33425f;border-radius:8
 <div id="activityTrend" class="activity-chart" aria-label="直近14日間の監視イベント推移"></div>
 <div id="executiveItems"></div>
 <div id="executiveScope" class="meta"></div>
+</section>
+<section class="viz-grid" aria-label="脅威情報の可視化">
+ <section class="viz-panel"><h2>📈 直近14日の検知推移</h2><div class="sub">日別の監視イベント数。ゼロ件の日も表示します。</div><div id="vizTrend"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel"><h2>🏢 企業別イベントランキング</h2><div class="sub">企業名が一致した監視イベント数。被害件数や被害確率ではありません。</div><div id="vizCompanies"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel"><h2>🏭 業種別インシデント分布</h2><div class="sub">保存済みインシデントの業種情報がある場合のみ集計。推測で補完しません。</div><div id="vizSectors"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel"><h2>🕵️ 攻撃グループ別の更新状況</h2><div class="sub">登録済み公開サイトにおける更新ページ数。攻撃成功数ではありません。</div><div id="vizGroups"><div class="viz-empty">データ読み込み中…</div></div></section>
+ <section class="viz-panel" style="grid-column:1/-1"><h2>🧩 インシデント関連ネットワーク</h2><div class="sub">分析エンジンが抽出した企業間の関連候補と、その根拠を表示します。</div><div id="vizNetwork"><div class="viz-empty">データ読み込み中…</div></div></section>
 </section>
 <section class="panel">
 <h2>💡 新しい発見・傾向</h2>

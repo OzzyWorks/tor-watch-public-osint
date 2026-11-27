@@ -37,11 +37,18 @@
     names.forEach((n,i)=>{const p=coords[n];out+='<circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="'+palette[i%palette.length]+'" stroke="#eaf1ff" stroke-width="1"/><text x="'+p.x+'" y="'+(p.y+20)+'" text-anchor="middle" fill="#d8e2f3" font-size="11">'+esc(n.length>13?n.slice(0,12)+"…":n)+'</text>';});
     host("vizNetwork").innerHTML=svgWrap(out,350)+'<div class="viz-legend"><span><i style="background:#657b9e"></i>分析エンジンが抽出した関連候補</span><span>'+names.length+'企業・'+visible.length+'関係</span></div><p class="viz-note">線は共通企業・攻撃種別・登録済み公開サイト等に基づく候補関係です。攻撃主体や同一事件の確定を示しません。</p>';
   }
+
+  function renderSectors(data){
+    const counts={};
+    (data.intelligence_incidents||[]).forEach(x=>{const sector=String(x.sector||"").trim();if(sector)counts[sector]=(counts[sector]||0)+1;});
+    const items=Object.entries(counts).map(([sector,count])=>({sector,count})).sort((a,b)=>b.count-a.count);
+    renderBars("vizSectors",items,"sector","count","#b69cff");
+  }
   window.renderVisualizations=function(data){
     if(!data)return;
     renderTrend(data);
     renderBars("vizCompanies",data.company_radar,"company","event_count","#70b7ff");
-    renderBars("vizGroups",data.group_activity,"group","changed_pages","#61d6a8");
+    renderBars("vizGroups",data.group_activity,"group","changed_pages","#61d6a8");\n    renderSectors(data);
     renderNetwork(data);
   };
 })();

@@ -22,22 +22,26 @@ jobs:
         run: pip install -r requirements.txt
       - name: Compile Python modules
         run: python -m compileall -q torwatch scripts
-      - name: Validate dashboard JavaScript syntax
+      - name: Validate inline and external dashboard JavaScript
         run: |
           python - <<'PY'
           import re
           import subprocess
           import tempfile
           from pathlib import Path
+
           html = Path("web/index.html").read_text(encoding="utf-8")
-          scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
-          if not scripts:
+          inline = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+          if not inline:
               raise SystemExit("No inline dashboard script found")
-          with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
-              handle.write("\n".join(scripts))
-              result = subprocess.run(["node", "--check", handle.name], capture_output=True, text=True)
-              if result.returncode:
-                  raise SystemExit(result.stderr)
+          sources = [("inline dashboard", "\\n".join(inline)),
+                     ("visualization module", Path("web/dashboard-visuals.js").read_text(encoding="utf-8"))]
+          for label, source in sources:
+              with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
+                  handle.write(source)
+                  result = subprocess.run(["node", "--check", handle.name], capture_output=True, text=True)
+                  if result.returncode:
+                      raise SystemExit(f"{label} JavaScript syntax error:\\n{result.stderr}")
           PY
       - name: Run unit tests
         run: python -m unittest discover -s tests

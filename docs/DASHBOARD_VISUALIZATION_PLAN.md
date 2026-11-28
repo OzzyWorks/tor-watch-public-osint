@@ -1,47 +1,40 @@
 # Dashboard Visualization Roadmap
 
-## Goal
-Turn the existing information-rich dashboard into a visual threat-intelligence overview that answers, at a glance:
-1. What changed?
-2. Which companies/sectors are most represented in the observed data?
-3. Which incidents, actors, and reports may be connected?
-4. What needs human verification?
+## Phase 1 — Overview and relationship map (completed 4/4)
+The first release established the executive summary, event trend, company/sector/group comparisons, and evidence-backed candidate relationship map. It is documented in the original milestone table below.
 
-This is a presentation project only. It does not add collectors, change risk scoring, or expand the intelligence engine.
+## Phase 2 — Interactive analysis (this PR)
+Goal: move from static charts to a dashboard where an analyst can change the time window and compare event activity and evidence depth without adding new collection or scoring logic.
 
-## Fixed scope: 4 milestones
+| # | Deliverable | Acceptance |
+|---|---|---|
+| 1 | Linked 7/14/30/90-day period selector for trend, event mix, and daily activity calendar | All three views use the same selected period and exported event history only |
+| 2 | Event-type composition chart | Counts distinguish new, changed, reclassified, and other events |
+| 3 | Daily activity calendar | Zero-event days are visible; tooltips expose exact date and count |
+| 4 | Evidence-depth scatter plot | Axes show independent source count and evidence count; bubble size shows observation count; colour shows the existing 0–100 evidence-strength value |
+| 5 | External visualization validation | CI syntax-checks both inline dashboard JavaScript and the external visualization module |
 
-| # | Milestone | Deliverables | Acceptance |
-|---|---|---|---|
-| 1 | Executive overview | Existing executive summary retained; 14-day daily event trend; clear status and coverage caveats | Uses exported data only; empty/insufficient history is labelled; mobile layout works |
-| 2 | Company and sector overview | Ranked company bars; sector/category distribution where source data supports it; activity comparison | No inferred sector labels; unknown values remain explicit; charts link to underlying records |
-| 3 | Incident relationship view | SVG relationship map for available candidate relations; visible relation type and rationale list | Displayed edges are labelled as candidates; rationale is visible where supplied; no unsupported actor attribution |
-| 4 | Final integration and release | Responsive/accessibility pass; data-shape and rendering tests; Pages deployment verification | Existing monitoring panels remain available; Actions and Pages deployment succeed |
+## Data and interpretation rules
+- Use only fields already exported by `scripts/export_web.py`.
+- The period selector filters only event-history views; lifetime company, sector, group, and incident summaries remain explicitly separate.
+- The 500-event export limit is disclosed where it affects the selected-period view.
+- Evidence strength is an explainable assessment, not a probability. It must not be described as victim impact or breach likelihood.
+- Empty history is labelled rather than fabricated. No inferred sectors, baselines, or relationships.
+- No new collectors, data sources, risk scoring, actor attribution, or investment analysis.
 
 ## Visual design direction
-- Dark analyst-console aesthetic, but with stronger hierarchy, restrained accent colours, larger charts, and more whitespace.
-- Summary first; detail panels below.
-- Prefer charts and compact visual comparisons over repeated text rows.
-- Keep the existing collapsible monitoring-health section.
-- Mobile-first responsive behavior: charts stack and relationship details remain readable without horizontal scrolling.
+- Dark analyst-console style with stronger hierarchy, larger visual comparisons, and mobile-first responsive layout.
+- Summary first, interactive period controls directly above the charts, detail panels below.
+- Keep monitoring health collapsed by default.
+- Charts must remain readable on narrow screens and expose exact values through tooltips or adjacent labels.
 
-## Data and safety rules
-- Use only fields already exported by `scripts/export_web.py`, adding export fields only when the underlying database already contains them.
-- Never fabricate counts, baselines, sectors, or relationships.
-- Distinguish collection health, threat severity, and evidence strength.
-- Label automated results as candidates; public reporting is not proof of victim impact.
-- Relationship edges must retain their type, rationale, and evidence references.
-- No new data sources, collection behavior, risk model, or investment analysis.
+## Original Phase 1 acceptance
+| # | Milestone | Result |
+|---|---|---|
+| 1 | Executive overview: executive summary and 14-day daily event trend | Complete |
+| 2 | Company and sector overview: company ranking, source-backed sector distribution, group activity | Complete |
+| 3 | Incident relationship view: SVG candidate network with relation-type/rationale detail | Complete |
+| 4 | Final integration and release: responsive layout, tests, Pages deployment | Complete |
 
-## Execution rules
-- Complete milestones in order; do not add extra feature tasks.
-- Each milestone is one bounded PR or a small number of directly related commits.
-- Run unit tests and dashboard validation before merging.
-- Stop after milestone 4. Afterwards, only fix defects or security issues.
-
-## Progress
-- [x] Plan fixed and committed to the visualization branch.
-- [x] 1/4 Executive overview: existing executive summary plus 14-day event trend.
-- [x] 2/4 Company and sector overview: company ranking, source-backed sector distribution, and group activity bars.
-- [x] 3/4 Incident relationship view: SVG candidate network with relation-type/rationale detail.
-- [x] 4/4 Final integration and release: unit tests and dashboard data/JavaScript validation passed; GitHub Pages deployment completed successfully.
+## Execution boundary
+This phase is a bounded presentation and validation change. Do not add more features after these deliverables; afterwards, only fix defects, accessibility regressions, or security issues.

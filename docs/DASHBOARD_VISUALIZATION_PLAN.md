@@ -13,9 +13,9 @@ This is a presentation project only. It does not add collectors, change risk sco
 
 | # | Milestone | Deliverables | Acceptance |
 |---|---|---|---|
-| 1 | Executive overview | Visual KPI tiles; 30-day/24-hour activity trend; clear status and coverage caveats | Uses exported data only; empty/insufficient history is labelled; mobile layout works |
+| 1 | Executive overview | Existing executive summary retained; 14-day daily event trend; clear status and coverage caveats | Uses exported data only; empty/insufficient history is labelled; mobile layout works |
 | 2 | Company and sector overview | Ranked company bars; sector/category distribution where source data supports it; activity comparison | No inferred sector labels; unknown values remain explicit; charts link to underlying records |
-| 3 | Incident relationship view | Interactive SVG relationship map for existing typed, evidence-backed relations; readable incident/actor/source detail list | Every edge shows relation type and evidence/rationale; no unsupported actor attribution; list fallback works |
+| 3 | Incident relationship view | SVG relationship map for available candidate relations; visible relation type and rationale list | Displayed edges are labelled as candidates; rationale is visible where supplied; no unsupported actor attribution |
 | 4 | Final integration and release | Responsive/accessibility pass; data-shape and rendering tests; Pages deployment verification | Existing monitoring panels remain available; Actions and Pages deployment succeed |
 
 ## Visual design direction
@@ -41,7 +41,7 @@ This is a presentation project only. It does not add collectors, change risk sco
 
 ## Progress
 - [x] Plan fixed and committed to the visualization branch.
-- [ ] 1/4 Executive overview.
-- [ ] 2/4 Company and sector overview.
-- [ ] 3/4 Incident relationship view.
-- [ ] 4/4 Final integration and release.
+- [x] 1/4 Executive overview: existing executive summary plus 14-day event trend.
+- [x] 2/4 Company and sector overview: company ranking, source-backed sector distribution, and group activity bars.
+- [x] 3/4 Incident relationship view: SVG candidate network with relation-type/rationale detail.
+- [x] 4/4 Final integration and release: unit tests and dashboard data/JavaScript validation passed; GitHub Pages deployment completed successfully.
